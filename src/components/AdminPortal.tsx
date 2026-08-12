@@ -14,6 +14,8 @@ import {
   LogOut,
   ChevronRight,
   Triangle,
+  Menu,
+  X,
 } from 'lucide-react';
 
 type Note = {
@@ -63,6 +65,8 @@ export default function AdminPortal() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
   /* Authentication */
   useEffect(() => {
@@ -307,15 +311,23 @@ export default function AdminPortal() {
     <div className="flex h-screen flex-col overflow-hidden bg-white font-sans text-neutral-900 antialiased">
       
       {/* ── TOP BAR ───────────────────────────── */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-neutral-200 px-4">
-        <div className="flex items-center gap-3">
-          <Triangle size={16} className="fill-black" />
-          <span className="text-neutral-300">/</span>
-          <span className="text-[13px] font-medium">curriculum</span>
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-neutral-200 px-3 sm:px-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(true)}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-100 md:hidden"
+            aria-label="Open sidebar"
+          >
+            <Menu size={15} />
+          </button>
+          <Triangle size={15} className="fill-black shrink-0" />
+          <span className="text-neutral-300 hidden sm:inline">/</span>
+          <span className="text-[13px] font-medium hidden sm:inline">curriculum</span>
           {currentModule && (
             <>
               <span className="text-neutral-300">/</span>
-              <span className="max-w-[200px] truncate text-[13px] text-neutral-500">
+              <span className="max-w-[120px] sm:max-w-[200px] truncate text-[12px] sm:text-[13px] text-neutral-500">
                 {currentModule.title || 'untitled'}
               </span>
             </>
@@ -323,39 +335,91 @@ export default function AdminPortal() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden text-[12px] text-neutral-400 sm:inline">
+          {currentModule && (
+            <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-100 p-0.5 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setActiveTab('editor')}
+                className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  activeTab === 'editor'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-neutral-500 hover:text-black'
+                }`}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('preview')}
+                className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  activeTab === 'preview'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-neutral-500 hover:text-black'
+                }`}
+              >
+                Preview
+              </button>
+            </div>
+          )}
+
+          <span className="hidden text-[12px] text-neutral-400 lg:inline">
             {user.email}
           </span>
           <button
             type="button"
             onClick={logout}
-            className="flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 px-2.5 text-[12px] text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
+            className="flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 px-2 sm:px-2.5 text-[12px] text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
           >
             <LogOut size={12} />
-            Logout
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 relative">
         
+        {/* Mobile backdrop */}
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
         {/* ── SIDEBAR ───────────────────────────── */}
-        <aside className="flex w-60 shrink-0 flex-col border-r border-neutral-200 bg-neutral-50/50">
-          <div className="flex items-center justify-between px-4 pb-2 pt-4">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400">
-              Modules
-            </span>
-            <span className="rounded-full border border-neutral-200 bg-white px-1.5 text-[10px] tabular-nums text-neutral-500">
-              {modules.length}
-            </span>
+        <aside
+          className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-neutral-200 bg-white transition-transform duration-200 ease-in-out md:static md:w-60 md:translate-x-0 md:bg-neutral-50/50 ${
+            mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 pb-2 pt-4 border-b border-neutral-100 md:border-b-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400">
+                Modules
+              </span>
+              <span className="rounded-full border border-neutral-200 bg-white px-1.5 text-[10px] tabular-nums text-neutral-500">
+                {modules.length}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(false)}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-neutral-200 text-neutral-400 transition-colors hover:text-black md:hidden"
+              aria-label="Close sidebar"
+            >
+              <X size={14} />
+            </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 pb-2">
+          <div className="flex-1 overflow-y-auto px-2 py-2">
             {modules.map((module) => (
               <button
                 key={module.id}
                 type="button"
-                onClick={() => setCurrentModule(module)}
+                onClick={() => {
+                  setCurrentModule(module);
+                  setMobileSidebarOpen(false);
+                }}
                 className={`group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
                   currentModule?.id === module.id
                     ? 'bg-neutral-200/60 font-medium text-black'
@@ -383,7 +447,10 @@ export default function AdminPortal() {
           <div className="border-t border-neutral-200 p-2">
             <button
               type="button"
-              onClick={handleAddNew}
+              onClick={() => {
+                handleAddNew();
+                setMobileSidebarOpen(false);
+              }}
               className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-black text-[13px] font-medium text-white transition-colors hover:bg-neutral-800"
             >
               <Plus size={13} />
@@ -394,19 +461,31 @@ export default function AdminPortal() {
 
         {/* ── EMPTY STATE ───────────────────────── */}
         {!currentModule ? (
-          <main className="flex flex-1 flex-col items-center justify-center gap-3">
+          <main className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50">
               <Plus size={18} className="text-neutral-400" />
             </div>
-            <p className="text-[13px] text-neutral-500">
+            <p className="text-[13px] text-neutral-500 text-center">
               Select a module or create a new one
             </p>
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="flex h-8 items-center gap-1.5 rounded-md border border-neutral-200 px-3 text-xs font-medium text-neutral-700 md:hidden"
+            >
+              <Menu size={14} />
+              View Modules ({modules.length})
+            </button>
           </main>
         ) : (
           <main className="flex min-w-0 flex-1 overflow-hidden">
             
             {/* ── EDITOR ─────────────────────────── */}
-            <section className="w-full overflow-y-auto lg:w-[480px] lg:shrink-0 lg:border-r lg:border-neutral-200">
+            <section
+              className={`w-full overflow-y-auto lg:w-[480px] xl:w-[520px] lg:shrink-0 lg:border-r lg:border-neutral-200 ${
+                activeTab === 'preview' ? 'hidden xl:block' : 'block'
+              }`}
+            >
               
               {/* Editor header */}
               <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-neutral-200 bg-white/80 px-5 backdrop-blur">
@@ -459,7 +538,7 @@ export default function AdminPortal() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="mb-1.5 block text-[12px] font-medium text-neutral-500">
                         Index
@@ -662,7 +741,11 @@ export default function AdminPortal() {
             </section>
 
             {/* ── PREVIEW ────────────────────────── */}
-            <section className="hidden flex-1 overflow-y-auto bg-neutral-50 xl:block">
+            <section
+              className={`flex-1 overflow-y-auto bg-neutral-50 ${
+                activeTab === 'preview' ? 'block' : 'hidden xl:block'
+              }`}
+            >
               <div className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-5 backdrop-blur">
                 <Eye size={13} className="text-neutral-400" />
                 <span className="text-[12px] font-medium text-neutral-500">
