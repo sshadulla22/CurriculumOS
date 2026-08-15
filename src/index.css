@@ -14,6 +14,7 @@
   color: #0f172a;
   background-color: #f8fafc;
   -webkit-font-smoothing: antialiased;
+  font-size: 16.5px;
 }
 
 body {
@@ -21,6 +22,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
+  font-size: 1rem;
 }
 
 html {
@@ -28,6 +30,7 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
   overflow-x: hidden;
+  font-size: 16.5px;
 }
 
 #root {
@@ -70,5 +73,14 @@ body::-webkit-scrollbar {
 
 .category-section {
   scroll-margin-top: 6rem;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 

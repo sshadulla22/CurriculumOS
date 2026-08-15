@@ -9,10 +9,11 @@ import CategorySection from './components/CategorySection';
 import SearchModal from './components/SearchModal';
 import AdminPortal from './components/AdminPortal';
 
-const OBJECTIVES = [
-  { label: 'Syntax', detail: 'Core language primitives' },
-  { label: 'Runtime', detail: 'Event loop & memory' },
-  { label: 'Patterns', detail: 'Architecture that scales' },
+const DEFAULT_TRACKS = [
+  { id: 'javascript', name: 'JavaScript', description: 'Core language fundamentals.' },
+  { id: 'react', name: 'React', description: 'Component-driven UI development.' },
+  { id: 'next', name: 'Next', description: 'Full-stack app architecture.' },
+  { id: 'typescript', name: 'TypeScript', description: 'Strong typing for scalable apps.' },
 ];
 
 function StudentDashboard() {
@@ -248,55 +249,39 @@ function StudentDashboard() {
           onClose={closeSidebar}
         />
 
-        <main className="w-full min-w-0 flex-1 xl:ml-64">
-          <header className="border-b border-slate-100 px-4 pb-8 pt-10 sm:px-6 lg:px-12 lg:pt-14">
-            <div className="mb-6 flex flex-wrap items-center gap-2">
-              {tracks.map((track) => {
-                const isActive = currentTrack?.id === track.id;
+        <main className="w-full min-w-0 flex-1 pt-20 xl:ml-64">
+          <header className="border-b border-slate-100 px-0 pb-8 pt-0">
+            <div className="sticky top-[72px] z-20 border-b border-slate-100 bg-white/90 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-12">
+              <div className="overflow-x-auto no-scrollbar">
+                <div className="flex min-w-max items-center gap-2">
+                  {tracks.map((track) => {
+                    const isActive = currentTrack?.id === track.id;
 
-                return (
-                  <button
-                    key={track.id}
-                    type="button"
-                    onClick={() => setCurrentTrack(track)}
-                    className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                      isActive
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
-                    }`}
-                  >
-                    {track.name}
-                  </button>
-                );
-              })}
+                    return (
+                      <button
+                        key={track.id}
+                        type="button"
+                        onClick={() => setCurrentTrack(track)}
+                        className={`shrink-0 rounded-full border px-3 py-2 text-[12px] font-medium transition-colors ${
+                          isActive
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
+                        }`}
+                      >
+                        {track.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            <div className="max-w-xl">
-              <h1 className="mb-3 text-[28px] font-semibold leading-tight tracking-tight sm:text-[34px] lg:text-[40px]">
+            <div className="max-w-xl px-4 pt-6 sm:px-6 lg:px-12 lg:pt-8">
+              <h1 className="mb-0 text-[28px] font-semibold leading-tight tracking-tight sm:text-[34px] lg:text-[40px]">
                 {currentTrack?.name ?? 'JavaScript Mastery'}
               </h1>
-
-              <p className="text-[14px] leading-relaxed text-slate-500 sm:text-[15px]">
-                {currentTrack?.description ?? 'Fundamentals through production architecture.'}
-              </p>
             </div>
 
-            <ul className="mt-8 grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-3">
-              {OBJECTIVES.map((objective) => (
-                <li
-                  key={objective.label}
-                  className="rounded-md border border-slate-100 bg-white px-4 py-3"
-                >
-                  <p className="text-[13px] font-medium text-slate-900">
-                    {objective.label}
-                  </p>
-
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {objective.detail}
-                  </p>
-                </li>
-              ))}
-            </ul>
           </header>
 
           <div className="px-4 sm:px-6 lg:px-12">

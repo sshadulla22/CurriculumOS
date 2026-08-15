@@ -13,7 +13,7 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
   const isAdmin = location.pathname === '/admin';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-auto min-h-[56px] max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 lg:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-6">
           {!isAdmin && (

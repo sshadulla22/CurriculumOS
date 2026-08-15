@@ -91,17 +91,19 @@ export default function CategorySection({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         {/* Code */}
         {code && (
-          <div className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+          <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <Code size={14} className="text-slate-400" />
-                <span className="text-xs font-medium text-slate-500">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-200 text-slate-600">
+                  <Code size={12} />
+                </div>
+                <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-600 uppercase">
                   source_code.js
                 </span>
               </div>
               <button
                 onClick={() => handleCopy(code)}
-                className="text-slate-400 hover:text-slate-600"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
                 aria-label="Copy code"
               >
                 {copied ? (
@@ -112,9 +114,11 @@ export default function CategorySection({
               </button>
             </div>
 
-            <pre className="p-5 text-[13px] font-mono overflow-x-auto leading-relaxed bg-slate-950 text-slate-200">
-              <code>{code}</code>
-            </pre>
+            <div className="w-full overflow-x-auto bg-[#0f172a]">
+              <pre className="min-h-[220px] w-full overflow-x-auto p-3 text-[12.5px] leading-6 text-slate-200 md:min-h-[240px] md:p-4">
+                <code className="block min-w-max font-mono">{code}</code>
+              </pre>
+            </div>
           </div>
         )}
 
