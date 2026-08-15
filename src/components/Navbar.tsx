@@ -1,5 +1,6 @@
 import { Menu, Search, Command, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import CurriculumOSLogo from './CurriculumOSLogo';
 
 interface NavbarProps {
   progress: number;
@@ -12,72 +13,65 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
   const isAdmin = location.pathname === '/admin';
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
-      <div className="h-14 px-4 sm:px-8 flex items-center justify-between max-w-[1600px] mx-auto">
-        
-        {/* LEFT: Menu + Logo + Search */}
-        <div className="flex items-center gap-3 sm:gap-6">
-          {/* Mobile Menu Toggle - Hidden if on Admin Page */}
+    <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex h-auto min-h-[56px] max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-6">
           {!isAdmin && (
-            <button 
-              onClick={onMenu} 
-              className="xl:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"
+            <button
+              onClick={onMenu}
+              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-50 xl:hidden"
+              aria-label="Open navigation"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
           )}
-          
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-6 h-6 bg-slate-900 text-white flex items-center justify-center text-[10px] font-black rounded group-hover:bg-indigo-600 transition-colors">
-              JS
-            </div>
-            <span className="hidden sm:inline text-[14px] font-bold tracking-tight text-slate-900 uppercase italic">
-              Mastery
-            </span>
+
+          <Link to="/" className="flex min-w-0 items-center gap-2 group" aria-label="CurriculumOS home">
+            <CurriculumOSLogo variant="horizontal" className="hidden min-[420px]:flex" />
           </Link>
 
-          {/* Search Trigger (Hidden on Admin Page) */}
           {!isAdmin && (
-            <button 
+            <button
               onClick={onSearch}
-              className="flex items-center gap-2 px-2 py-1.5 sm:px-3 sm:py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:border-indigo-400 hover:bg-white transition-all group"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-400 transition-all hover:border-indigo-400 hover:bg-white group sm:max-w-[360px] sm:px-3 sm:py-2"
             >
-              <Search size={14} className="group-hover:text-indigo-500" />
-              <span className="hidden md:inline text-[12px] font-medium">Search documentation...</span>
-              <span className="hidden lg:flex items-center gap-0.5 ml-2 text-[10px] font-bold text-slate-300 border border-slate-200 px-1.5 py-0.5 rounded-md">
+              <Search size={14} className="shrink-0 group-hover:text-indigo-500" />
+              <span className="hidden min-[500px]:inline truncate text-[12px] font-medium">
+                Search documentation...
+              </span>
+              <span className="ml-auto hidden items-center gap-0.5 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-300 lg:flex">
                 <Command size={10} /> K
               </span>
             </button>
           )}
         </div>
 
-        {/* RIGHT: Progress + Admin Toggle */}
-        <div className="flex items-center gap-4 sm:gap-8">
-          
-          {/* Progress Indicator (Hidden on Admin Page) */}
+        <div className="flex items-center gap-3 sm:gap-6">
           {!isAdmin && (
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] font-black uppercase text-slate-300 tracking-tighter">Progress</span>
-                <span className="text-[11px] tabular-nums font-bold text-slate-900">{Math.round(progress)}%</span>
+            <div className="hidden items-center gap-3 sm:flex">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black uppercase tracking-tighter text-slate-300">
+                  Progress
+                </span>
+                <span className="text-[11px] tabular-nums font-bold text-slate-900">
+                  {Math.round(progress)}%
+                </span>
               </div>
-              <div className="w-12 sm:w-20 h-[4px] bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-600 transition-all duration-300 ease-out" 
-                  style={{ width: `${progress}%` }} 
+              <div className="h-[4px] w-12 overflow-hidden rounded-full bg-slate-100 sm:w-20">
+                <div
+                  className="h-full bg-indigo-600 transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* Admin / Portal Toggle */}
-          <Link 
-            to={isAdmin ? "/" : "/admin"}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider transition-all shadow-sm border ${
-              isAdmin 
-              ? 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800' 
-              : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-500 hover:text-indigo-600'
+          <Link
+            to={isAdmin ? '/' : '/admin'}
+            className={`flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-all sm:px-4 sm:text-[11px] ${
+              isAdmin
+                ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-500 hover:text-indigo-600'
             }`}
           >
             {isAdmin ? (
@@ -89,7 +83,6 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
               </>
             )}
           </Link>
-
         </div>
       </div>
     </header>

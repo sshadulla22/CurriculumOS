@@ -34,15 +34,15 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-16 sm:px-4 sm:pt-20">
       <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-[2px]" onClick={onClose} />
-      
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="flex items-center px-4 py-3 border-b border-slate-100">
-          <Search className="text-slate-400 mr-3" size={18} />
+
+      <div className="relative w-full max-w-[92vw] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-w-lg">
+        <div className="flex items-center border-b border-slate-100 px-3 py-3 sm:px-4">
+          <Search className="mr-3 text-slate-400" size={18} />
           <input
             autoFocus
-            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
+            className="flex-1 border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
             placeholder="Search for concepts, patterns, or architecture..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -52,7 +52,7 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
           </button>
         </div>
 
-        <div className="max-h-[350px] overflow-y-auto p-2">
+        <div className="max-h-[60vh] overflow-y-auto p-2 sm:max-h-[350px]">
           {results.length > 0 ? (
             results.map((res, i) => (
               <a

@@ -17,6 +17,8 @@ const OBJECTIVES = [
 
 function StudentDashboard() {
   const [roadmapData, setRoadmapData] = useState<any[]>([]);
+  const [tracks, setTracks] = useState<any[]>([]);
+  const [currentTrack, setCurrentTrack] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
@@ -33,8 +35,16 @@ function StudentDashboard() {
   }, []);
 
   useEffect(() => {
-    async function fetchCurriculum() {
+    async function fetchTracks() {
       if (!supabase) {
+        const fallbackTrack = {
+          id: 'default-track',
+          name: 'JavaScript Mastery',
+          description: 'Fundamentals through production architecture.',
+        };
+
+        setTracks([fallbackTrack]);
+        setCurrentTrack(fallbackTrack);
         setRoadmapData(ROADMAP_DATA as any[]);
         setActiveId(ROADMAP_DATA[0]?.id ?? '');
         setError('');
@@ -42,9 +52,37 @@ function StudentDashboard() {
         return;
       }
 
+      const { data: trackRows, error: trackError } = await supabase
+        .from('roadmap_tracks')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (trackError) {
+        console.error('Error fetching tracks:', trackError);
+        setError(trackError.message);
+        setTracks([]);
+        setCurrentTrack(null);
+        setLoading(false);
+        return;
+      }
+
+      const list = (trackRows ?? []) as any[];
+      setTracks(list);
+
+      const selectedTrack = list.find((track) => track.id === currentTrack?.id) ?? list[0] ?? null;
+      setCurrentTrack(selectedTrack);
+
+      if (!selectedTrack) {
+        setRoadmapData([]);
+        setActiveId('');
+        setLoading(false);
+        return;
+      }
+
       const { data, error: fetchError } = await supabase
         .from('roadmap_modules')
         .select('*')
+        .eq('track_id', selectedTrack.id)
         .order('index', { ascending: true });
 
       if (fetchError) {
@@ -55,14 +93,45 @@ function StudentDashboard() {
 
         if (data && data.length > 0) {
           setActiveId(data[0].id);
+        } else {
+          setActiveId('');
         }
       }
 
       setLoading(false);
     }
 
-    fetchCurriculum();
+    fetchTracks();
   }, []);
+
+  useEffect(() => {
+    if (!currentTrack || !supabase) return;
+
+    async function fetchModulesByTrack(trackId: string) {
+      setLoading(true);
+      setError('');
+
+      const { data, error: fetchError } = await supabase
+        .from('roadmap_modules')
+        .select('*')
+        .eq('track_id', trackId)
+        .order('index', { ascending: true });
+
+      if (fetchError) {
+        console.error('Error fetching roadmap modules:', fetchError);
+        setError(fetchError.message);
+        setRoadmapData([]);
+        setActiveId('');
+      } else {
+        setRoadmapData(data ?? []);
+        setActiveId((data ?? [])[0]?.id ?? '');
+      }
+
+      setLoading(false);
+    }
+
+    fetchModulesByTrack(currentTrack.id);
+  }, [currentTrack]);
 
   useEffect(() => {
     if (roadmapData.length === 0) return;
@@ -171,7 +240,7 @@ function StudentDashboard() {
         onSearch={toggleSearch}
       />
 
-      <div className="flex">
+      <div className="flex min-h-screen w-full">
         <Sidebar
           activeId={activeId}
           items={roadmapData}
@@ -179,23 +248,44 @@ function StudentDashboard() {
           onClose={closeSidebar}
         />
 
-        <main className="w-full min-w-0 xl:ml-64">
-          <header className="border-b border-slate-100 px-5 pb-10 pt-14 sm:px-8 lg:px-12">
+        <main className="w-full min-w-0 flex-1 xl:ml-64">
+          <header className="border-b border-slate-100 px-4 pb-8 pt-10 sm:px-6 lg:px-12 lg:pt-14">
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              {tracks.map((track) => {
+                const isActive = currentTrack?.id === track.id;
+
+                return (
+                  <button
+                    key={track.id}
+                    type="button"
+                    onClick={() => setCurrentTrack(track)}
+                    className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                      isActive
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    {track.name}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="max-w-xl">
-              <h1 className="mb-3 text-[32px] font-semibold leading-tight tracking-tight sm:text-[40px]">
-                JavaScript Mastery
+              <h1 className="mb-3 text-[28px] font-semibold leading-tight tracking-tight sm:text-[34px] lg:text-[40px]">
+                {currentTrack?.name ?? 'JavaScript Mastery'}
               </h1>
 
-              <p className="text-[15px] leading-relaxed text-slate-500">
-                Fundamentals through production architecture.
+              <p className="text-[14px] leading-relaxed text-slate-500 sm:text-[15px]">
+                {currentTrack?.description ?? 'Fundamentals through production architecture.'}
               </p>
             </div>
 
-            <ul className="mt-8 grid max-w-xl grid-cols-1 gap-px overflow-hidden rounded-lg border border-slate-100 bg-slate-100 sm:grid-cols-3">
+            <ul className="mt-8 grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-3">
               {OBJECTIVES.map((objective) => (
                 <li
                   key={objective.label}
-                  className="bg-white px-4 py-3"
+                  className="rounded-md border border-slate-100 bg-white px-4 py-3"
                 >
                   <p className="text-[13px] font-medium text-slate-900">
                     {objective.label}
@@ -209,7 +299,7 @@ function StudentDashboard() {
             </ul>
           </header>
 
-          <div className="px-5 sm:px-8 lg:px-12">
+          <div className="px-4 sm:px-6 lg:px-12">
             {roadmapData.map((item, index) => (
               <CategorySection
                 key={item.id}

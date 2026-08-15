@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
-import { RoadmapItem } from '../data/roadmap';
+import type { RoadmapItem } from '../types/roadmap';
 
 interface SidebarProps {
   activeId: string;
@@ -56,7 +56,9 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                   >
                     <ChevronDown
                       size={12}
-                      className={`transition-transform duration-150 ${isOpen ? '' : '-rotate-90'}`}
+                      className={`transition-transform duration-150 ${
+                        isOpen ? '' : '-rotate-90'
+                      }`}
                     />
                   </button>
                 )}
@@ -91,13 +93,13 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden xl:flex flex-col w-64 fixed top-12 bottom-0 border-r border-slate-100 bg-white overflow-y-auto">
+      <aside className="fixed bottom-0 top-14 hidden w-64 flex-col overflow-y-auto border-r border-slate-100 bg-white xl:flex">
         {nav}
       </aside>
 
       {/* Mobile drawer */}
       <div
-        className={`xl:hidden fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`}
+        className={`fixed inset-0 z-50 xl:hidden ${open ? '' : 'pointer-events-none'}`}
         aria-hidden={!open}
       >
         <div
@@ -110,16 +112,16 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
           role="dialog"
           aria-modal="true"
           aria-label="Navigation"
-          className={`absolute top-0 left-0 bottom-0 w-72 bg-white border-r border-slate-100 overflow-y-auto transition-transform duration-200 ${
+          className={`absolute bottom-0 left-0 top-0 w-[82vw] max-w-[300px] overflow-y-auto border-r border-slate-100 bg-white transition-transform duration-200 ${
             open ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="h-12 px-4 flex items-center justify-between border-b border-slate-100">
+          <div className="flex h-12 items-center justify-between border-b border-slate-100 px-4">
             <span className="text-[13px] font-semibold">Contents</span>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-900"
               aria-label="Close navigation"
             >
               <X size={16} />
