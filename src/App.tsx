@@ -156,7 +156,7 @@ function StudentDashboard() {
           </div>
 
           {/* Hero Section */}
-          <header className="lg:mt-16">
+          <header className="mt-16">
             <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-500">
               <span>Curriculum</span>
               <span>/</span>
