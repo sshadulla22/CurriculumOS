@@ -17,6 +17,7 @@ import {
   Triangle,
   Menu,
   X,
+  Image,
 } from 'lucide-react';
 
 /* ---------- TYPES ---------- */
@@ -95,6 +96,7 @@ export default function AdminPortal() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
 
   const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   /* FIX 3: backup of the live HTML so nothing is ever lost on a re-mount */
   const descriptionHtmlRef = useRef<string>('');
   /* tracks which module id the editor DOM currently holds */
@@ -163,6 +165,31 @@ export default function AdminPortal() {
     const html = descriptionEditorRef.current.innerHTML;
     descriptionHtmlRef.current = html;
     updateModule('description', html);
+  }
+
+  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!descriptionEditorRef.current) return;
+
+      descriptionEditorRef.current.focus();
+      document.execCommand('insertHTML', false, `<img src="${dataUrl}" style="max-width: 100%; height: auto; margin: 8px 0; border-radius: 4px;" alt="" />`);
+
+      const html = descriptionEditorRef.current.innerHTML;
+      descriptionHtmlRef.current = html;
+      updateModule('description', html);
+    };
+
+    reader.readAsDataURL(file);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
   }
 
   function updateQuestion(index: number, field: keyof InterviewQuestion, value: string) {
@@ -982,6 +1009,23 @@ export default function AdminPortal() {
                               {item.label}
                             </button>
                           ))}
+                          <input
+                            ref={imageInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => imageInputRef.current?.click()}
+                            className="rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black flex items-center gap-1"
+                            title="Insert image"
+                          >
+                            <Image size={11} />
+                            <span>Image</span>
+                          </button>
                         </div>
 
                         <div
