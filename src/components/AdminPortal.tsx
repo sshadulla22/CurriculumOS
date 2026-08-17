@@ -607,6 +607,14 @@ export default function AdminPortal() {
           </span>
           <button
             type="button"
+            onClick={() => navigate('/')}
+            className="flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 px-2 sm:px-2.5 text-[12px] text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
+          >
+            <ChevronRight size={12} className="rotate-180" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+          <button
+            type="button"
             onClick={logout}
             className="flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 px-2 sm:px-2.5 text-[12px] text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
           >
