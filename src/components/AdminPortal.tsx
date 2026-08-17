@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Image,
+  Link2,
 } from 'lucide-react';
 
 /* ---------- TYPES ---------- */
@@ -40,6 +41,11 @@ type InterviewQuestion = {
   answer: string;
 };
 
+type Resource = {
+  title: string;
+  url: string;
+};
+
 type Module = {
   id?: string;
   trackId: string;
@@ -51,6 +57,7 @@ type Module = {
   notes: Note[];
   subTopics: any[];
   interviewQuestions: InterviewQuestion[];
+  resources: Resource[];
 };
 
 function mapDatabaseModule(row: any): Module {
@@ -67,6 +74,7 @@ function mapDatabaseModule(row: any): Module {
     interviewQuestions: Array.isArray(row.interview_questions)
       ? row.interview_questions
       : [],
+    resources: Array.isArray(row.resources) ? row.resources : [],
   };
 }
 
@@ -95,13 +103,13 @@ export default function AdminPortal() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
 
+  // Show code editor even when empty (after user clicks "Add Code")
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+
   const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  /* FIX 3: backup of the live HTML so nothing is ever lost on a re-mount */
   const descriptionHtmlRef = useRef<string>('');
-  /* tracks which module id the editor DOM currently holds */
   const loadedDescIdRef = useRef<string | null>(null);
-  /* remembers the signed-in user id, so token refresh doesn't reset state */
   const userIdRef = useRef<string | null>(null);
 
   function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
@@ -150,12 +158,47 @@ export default function AdminPortal() {
     updateModule('notes', currentModule.notes.filter((_, i) => i !== index));
   }
 
+  function addResource() {
+    if (!currentModule) return;
+    updateModule('resources', [
+      ...currentModule.resources,
+      { title: '', url: '' },
+    ]);
+  }
+
+  function updateResource(index: number, field: keyof Resource, value: string) {
+    if (!currentModule) return;
+    updateModule(
+      'resources',
+      currentModule.resources.map((r, i) => (i === index ? { ...r, [field]: value } : r))
+    );
+  }
+
+  function removeResource(index: number) {
+    if (!currentModule) return;
+    updateModule('resources', currentModule.resources.filter((_, i) => i !== index));
+  }
+
   function addQuestion() {
     if (!currentModule) return;
     updateModule('interviewQuestions', [
       ...currentModule.interviewQuestions,
       { question: '', answer: '' },
     ]);
+  }
+
+  function addCodeResource() {
+    if (!currentModule) return;
+    setShowCodeEditor(true);
+    if (!currentModule.code?.trim()) {
+      updateModule('code', '// Enter code here');
+    }
+  }
+
+  function removeCodeResource() {
+    if (!currentModule) return;
+    updateModule('code', '');
+    setShowCodeEditor(false);
   }
 
   function applyDescriptionCommand(command: string, value?: string) {
@@ -179,7 +222,11 @@ export default function AdminPortal() {
       if (!descriptionEditorRef.current) return;
 
       descriptionEditorRef.current.focus();
-      document.execCommand('insertHTML', false, `<img src="${dataUrl}" style="max-width: 100%; height: auto; margin: 8px 0; border-radius: 4px;" alt="" />`);
+      document.execCommand(
+        'insertHTML',
+        false,
+        `<img src="${dataUrl}" style="max-width: 100%; height: auto; margin: 8px 0; border-radius: 4px;" alt="" />`
+      );
 
       const html = descriptionEditorRef.current.innerHTML;
       descriptionHtmlRef.current = html;
@@ -225,7 +272,6 @@ export default function AdminPortal() {
 
     const list = (data ?? []) as Track[];
     setTracks(list);
-    /* keep the SAME object if the track still exists → no re-fetch loop */
     setCurrentTrack((prev) => {
       if (!prev) return list[0] ?? null;
       return list.find((t) => t.id === prev.id) ? prev : (list[0] ?? null);
@@ -253,7 +299,10 @@ export default function AdminPortal() {
 
   async function addTrack() {
     const name = trackNameInput.trim();
-    if (!name) { showToast('Roadmap name is required.', 'info'); return; }
+    if (!name) {
+      showToast('Roadmap name is required.', 'info');
+      return;
+    }
     const slug =
       name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
       `roadmap-${Date.now()}`;
@@ -279,9 +328,15 @@ export default function AdminPortal() {
   }
 
   async function renameTrack() {
-    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
+    if (!currentTrack) {
+      showToast('Select a roadmap first.', 'info');
+      return;
+    }
     const newName = trackRenameInput.trim();
-    if (!newName) { showToast('Roadmap name is required.', 'info'); return; }
+    if (!newName) {
+      showToast('Roadmap name is required.', 'info');
+      return;
+    }
 
     const slug =
       newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
@@ -309,19 +364,26 @@ export default function AdminPortal() {
   }
 
   async function deleteTrack() {
-    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
+    if (!currentTrack) {
+      showToast('Select a roadmap first.', 'info');
+      return;
+    }
     if (!requireSecretPin(`roadmap "${currentTrack.name}"`)) return;
     if (!window.confirm(`Delete roadmap "${currentTrack.name}" and all its modules?`)) return;
 
     const { error: moduleDeleteError } = await supabase
-      .from('roadmap_modules').delete().eq('track_id', currentTrack.id);
+      .from('roadmap_modules')
+      .delete()
+      .eq('track_id', currentTrack.id);
     if (moduleDeleteError) {
       showToast(`Error deleting roadmap modules: ${moduleDeleteError.message}`, 'error');
       return;
     }
 
     const { error: trackDeleteError } = await supabase
-      .from('roadmap_tracks').delete().eq('id', currentTrack.id);
+      .from('roadmap_tracks')
+      .delete()
+      .eq('id', currentTrack.id);
     if (trackDeleteError) {
       showToast(`Error deleting roadmap: ${trackDeleteError.message}`, 'error');
       return;
@@ -337,27 +399,33 @@ export default function AdminPortal() {
 
   /* ---------- EFFECTS ---------- */
 
-  /* FIX 1: Auth — ignore token refresh / same-user events */
   useEffect(() => {
     let mounted = true;
 
     async function checkUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!mounted) return;
       userIdRef.current = user?.id ?? null;
       setUser(user);
       setAuthLoading(false);
+      
+      // Fetch tracks after user is confirmed
+      if (user?.id) {
+        fetchTracks();
+      }
     }
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-
-      // These fire every time you come back to the browser tab. Ignore them.
       if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
 
       const nextId = session?.user?.id ?? null;
-      if (nextId === userIdRef.current) return; // same user → do nothing
+      if (nextId === userIdRef.current) return;
 
       userIdRef.current = nextId;
       setUser(session?.user ?? null);
@@ -370,23 +438,16 @@ export default function AdminPortal() {
     };
   }, []);
 
-  /* Load tracks once per real user change */
   useEffect(() => {
-    if (!user?.id) return;
-    fetchTracks();
-  }, [user?.id]);
-
-  /* Load modules only when the track ID string changes */
-  useEffect(() => {
-    if (!user?.id || !currentTrack?.id) return;
+    if (!currentTrack?.id) return;
     fetchModules(currentTrack.id);
-  }, [user?.id, currentTrack?.id]);
+  }, [currentTrack?.id]); // Only depend on currentTrack changes
 
-  /* Sync editor DOM only when the selected module actually changes */
   useEffect(() => {
     if (!currentModule) {
       loadedDescIdRef.current = null;
       descriptionHtmlRef.current = '';
+      setShowCodeEditor(false);
       return;
     }
     const key = currentModule.id || 'new';
@@ -396,10 +457,11 @@ export default function AdminPortal() {
       if (descriptionEditorRef.current) {
         descriptionEditorRef.current.innerHTML = descriptionHtmlRef.current;
       }
+      // Show code editor if module already has code
+      setShowCodeEditor(Boolean(currentModule.code?.trim()));
     }
   }, [currentModule?.id]);
 
-  /* FIX 3: if the editor DOM node ever re-mounts, restore the last HTML */
   function attachDescriptionRef(node: HTMLDivElement | null) {
     descriptionEditorRef.current = node;
     if (node && node.innerHTML !== descriptionHtmlRef.current) {
@@ -410,11 +472,16 @@ export default function AdminPortal() {
   /* ---------- ACTIONS ---------- */
 
   function handleAddNew() {
-    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
-    const nextIndex = modules.length > 0 ? Math.max(...modules.map((m) => m.index)) + 1 : 1;
+    if (!currentTrack) {
+      showToast('Select a roadmap first.', 'info');
+      return;
+    }
+    const nextIndex =
+      modules.length > 0 ? Math.max(...modules.map((m) => m.index)) + 1 : 1;
 
     loadedDescIdRef.current = null;
     descriptionHtmlRef.current = 'Describe this lesson...';
+    setShowCodeEditor(false);
 
     setCurrentModule({
       trackId: currentTrack.id,
@@ -422,10 +489,11 @@ export default function AdminPortal() {
       title: 'New Lesson',
       description: 'Describe this lesson...',
       videoId: '',
-      code: '// Enter code here',
+      code: '',
       notes: [],
       subTopics: [],
       interviewQuestions: [],
+      resources: [],
     });
 
     showToast('New module created.', 'info');
@@ -433,13 +501,18 @@ export default function AdminPortal() {
 
   async function saveToDatabase() {
     if (!currentModule) return;
-    if (!currentModule.title.trim()) { alert('Please enter a lesson title.'); return; }
-    if (!currentModule.trackId) { alert('Module has no track assigned.'); return; }
+    if (!currentModule.title.trim()) {
+      alert('Please enter a lesson title.');
+      return;
+    }
+    if (!currentModule.trackId) {
+      alert('Module has no track assigned.');
+      return;
+    }
 
     setSaving(true);
     setError('');
 
-    /* always take the freshest HTML straight from the DOM */
     const liveHtml = descriptionEditorRef.current
       ? descriptionEditorRef.current.innerHTML
       : currentModule.description;
@@ -455,6 +528,7 @@ export default function AdminPortal() {
       notes: currentModule.notes || [],
       sub_topics: currentModule.subTopics || [],
       interview_questions: currentModule.interviewQuestions || [],
+      resources: currentModule.resources || [],
     };
 
     const { data, error: saveError } = await supabase
@@ -471,6 +545,7 @@ export default function AdminPortal() {
       loadedDescIdRef.current = savedModule.id || 'new';
       descriptionHtmlRef.current = savedModule.description || '';
       setCurrentModule(savedModule);
+      setShowCodeEditor(Boolean(savedModule.code?.trim()));
       await fetchModules(currentModule.trackId);
       showToast('Changes saved successfully.', 'success');
     }
@@ -479,12 +554,17 @@ export default function AdminPortal() {
 
   async function deleteModule() {
     if (!currentModule) return;
-    if (!currentModule.id) { setCurrentModule(null); return; }
+    if (!currentModule.id) {
+      setCurrentModule(null);
+      return;
+    }
     if (!requireSecretPin(`lesson "${currentModule.title}"`)) return;
     if (!window.confirm(`Delete "${currentModule.title}" permanently?`)) return;
 
     const { error: deleteError } = await supabase
-      .from('roadmap_modules').delete().eq('id', currentModule.id);
+      .from('roadmap_modules')
+      .delete()
+      .eq('id', currentModule.id);
 
     if (deleteError) {
       showToast(`Error deleting: ${deleteError.message}`, 'error');
@@ -507,7 +587,6 @@ export default function AdminPortal() {
     navigate('/');
   }
 
-  /* Memoized preview — stops the iframe reloading on tab switch */
   const memoizedPreview = useMemo(() => {
     if (!currentModule) return null;
     return (
@@ -521,6 +600,7 @@ export default function AdminPortal() {
         notes={currentModule.notes}
         subTopics={currentModule.subTopics}
         interviewQuestions={currentModule.interviewQuestions}
+        resources={currentModule.resources}
       />
     );
   }, [currentModule]);
@@ -542,8 +622,6 @@ export default function AdminPortal() {
     return <AdminLogin onLogin={() => navigate('/student')} />;
   }
 
-  /* FIX 2: only show the full-screen loader on the FIRST load.
-     Never unmount the editor while a module is open. */
   if (loading && !currentModule && modules.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
@@ -554,6 +632,8 @@ export default function AdminPortal() {
       </div>
     );
   }
+
+  const hasCode = showCodeEditor || Boolean(currentModule?.code?.trim());
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white font-sans text-neutral-900 antialiased">
@@ -746,7 +826,9 @@ export default function AdminPortal() {
                       if (trackRenameOpen) setTrackRenameInput(e.target.value);
                       else setTrackNameInput(e.target.value);
                     }}
-                    placeholder={trackRenameOpen ? 'Enter new roadmap name' : 'Enter roadmap name'}
+                    placeholder={
+                      trackRenameOpen ? 'Enter new roadmap name' : 'Enter roadmap name'
+                    }
                     className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-900"
                     autoFocus
                   />
@@ -854,9 +936,7 @@ export default function AdminPortal() {
                   <span className="font-mono text-[11px] tabular-nums text-neutral-400">
                     {String(module.index).padStart(2, '0')}
                   </span>
-                  <span className="flex-1 truncate">
-                    {module.title || 'Untitled'}
-                  </span>
+                  <span className="flex-1 truncate">{module.title || 'Untitled'}</span>
                   <ChevronRight
                     size={12}
                     className={`text-neutral-300 transition-opacity ${
@@ -911,16 +991,6 @@ export default function AdminPortal() {
                 <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-neutral-200 bg-white/80 px-5 backdrop-blur">
                   <span className="text-[13px] font-medium">Editor</span>
                   <div className="flex items-center gap-2">
-                    {/* {currentModule.id && (
-                      <button
-                        type="button"
-                        onClick={deleteModule}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-neutral-200 text-neutral-400 transition-colors hover:border-red-300 hover:text-red-500"
-                        aria-label="Delete"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )} */}
                     <button
                       type="button"
                       onClick={saveToDatabase}
@@ -985,6 +1055,7 @@ export default function AdminPortal() {
                       </div>
                     </div>
 
+                    {/* Description — always visible */}
                     <div>
                       <label className="mb-1.5 block text-[12px] font-medium text-neutral-500">
                         Description
@@ -1009,6 +1080,8 @@ export default function AdminPortal() {
                               {item.label}
                             </button>
                           ))}
+
+                          {/* Image button in rich text toolbar */}
                           <input
                             ref={imageInputRef}
                             type="file"
@@ -1020,7 +1093,7 @@ export default function AdminPortal() {
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => imageInputRef.current?.click()}
-                            className="rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black flex items-center gap-1"
+                            className="flex items-center gap-1 rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
                             title="Insert image"
                           >
                             <Image size={11} />
@@ -1038,32 +1111,67 @@ export default function AdminPortal() {
                             updateModule('description', html);
                           }}
                           data-placeholder="Describe this module..."
-                          className="min-h-[120px] w-full resize-y overflow-auto bg-white p-3 text-[13px] leading-relaxed text-neutral-700 outline-none placeholder:text-neutral-300 focus:border-neutral-900 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_em]:italic [&_u]:underline"
+                          className="min-h-[120px] w-full resize-y overflow-auto bg-white p-3 text-[13px] leading-relaxed text-neutral-700 outline-none [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_em]:italic [&_u]:underline"
                           style={{ whiteSpace: 'pre-wrap' }}
                         />
                       </div>
                     </div>
                   </div>
 
+                  {/* ── CODE RESOURCE (add / remove) ── */}
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">
-                      <Code2 size={13} />
-                      Code
-                    </label>
-                    <textarea
-                      value={currentModule.code}
-                      onChange={(e) => updateModule('code', e.target.value)}
-                      spellCheck={false}
-                      placeholder="// Write code here..."
-                      className="min-h-52 w-full resize-y rounded-md border border-neutral-200 bg-neutral-950 p-4 font-mono text-[12.5px] leading-relaxed text-neutral-200 outline-none transition-colors focus:border-neutral-600"
-                    />
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">
+                        <Code2 size={13} />
+                        Code
+                      </label>
+                      {hasCode ? (
+                        <button
+                          type="button"
+                          onClick={removeCodeResource}
+                          className="flex h-6 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-600 transition-colors hover:border-red-300 hover:text-red-500"
+                        >
+                          <Trash2 size={11} />
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={addCodeResource}
+                          className="flex h-6 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
+                        >
+                          <Plus size={11} />
+                          Add Code
+                        </button>
+                      )}
+                    </div>
+
+                    {hasCode ? (
+                      <textarea
+                        value={currentModule.code}
+                        onChange={(e) => updateModule('code', e.target.value)}
+                        spellCheck={false}
+                        placeholder="// Write code here..."
+                        className="min-h-52 w-full resize-y rounded-md border border-neutral-200 bg-neutral-950 p-4 font-mono text-[12.5px] leading-relaxed text-neutral-200 outline-none transition-colors focus:border-neutral-600"
+                      />
+                    ) : (
+                      <div className="rounded-md border border-dashed border-neutral-200 py-6 text-center text-[12px] text-neutral-400">
+                        No code resource
+                      </div>
+                    )}
                   </div>
 
+                  {/* ── NOTES (multiple, always available) ── */}
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">
                         <AlertCircle size={13} />
                         Notes
+                        {currentModule.notes.length > 0 && (
+                          <span className="rounded-full border border-neutral-200 bg-white px-1.5 text-[10px] tabular-nums text-neutral-500">
+                            {currentModule.notes.length}
+                          </span>
+                        )}
                       </span>
                       <button
                         type="button"
@@ -1114,12 +1222,70 @@ export default function AdminPortal() {
                       ))}
                       {currentModule.notes.length === 0 && (
                         <div className="rounded-md border border-dashed border-neutral-200 py-6 text-center text-[12px] text-neutral-400">
-                          No notes
+                          No notes — click Add to create one
                         </div>
                       )}
                     </div>
                   </div>
 
+                  {/* ── RESOURCES ── */}
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">
+                        <Link2 size={13} />
+                        Resources
+                      </span>
+                      <button
+                        type="button"
+                        onClick={addResource}
+                        className="flex h-6 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
+                      >
+                        <Plus size={11} />
+                        Add
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {currentModule.resources.map((resource, index) => (
+                        <div key={index} className="rounded-md border border-neutral-200 p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="font-mono text-[11px] text-neutral-400">
+                              Resource {index + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeResource(index)}
+                              className="flex h-6 w-6 items-center justify-center rounded text-neutral-300 transition-colors hover:text-red-500"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+
+                          <input
+                            type="text"
+                            value={resource.title}
+                            onChange={(e) => updateResource(index, 'title', e.target.value)}
+                            placeholder="Resource title (e.g., MDN Docs)"
+                            className="mb-2 h-8 w-full rounded-md border border-neutral-200 px-2.5 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:border-neutral-900"
+                          />
+                          <input
+                            type="text"
+                            value={resource.url}
+                            onChange={(e) => updateResource(index, 'url', e.target.value)}
+                            placeholder="Resource URL (e.g., https://...)"
+                            className="h-8 w-full rounded-md border border-neutral-200 px-2.5 text-[13px] outline-none placeholder:text-neutral-300 focus:border-neutral-900"
+                          />
+                        </div>
+                      ))}
+                      {currentModule.resources.length === 0 && (
+                        <div className="rounded-md border border-dashed border-neutral-200 py-6 text-center text-[12px] text-neutral-400">
+                          No resources — click Add to create one
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── INTERVIEW FAQ ── */}
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">

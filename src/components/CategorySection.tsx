@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   Play,
   Code,
+  X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 
 type Note = {
@@ -21,6 +24,11 @@ type Note = {
 type InterviewQuestion = {
   question: string;
   answer: string;
+};
+
+type Resource = {
+  title: string;
+  url: string;
 };
 
 type SubTopic = {
@@ -40,6 +48,7 @@ type Props = {
   videoId?: string;
   subTopics?: SubTopic[];
   interviewQuestions?: InterviewQuestion[];
+  resources?: Resource[];
 };
 
 export default function CategorySection({
@@ -52,9 +61,12 @@ export default function CategorySection({
   videoId,
   subTopics = [],
   interviewQuestions = [],
+  resources = [],
 }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [imageZoom, setImageZoom] = useState(1);
 
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -81,7 +93,15 @@ export default function CategorySection({
         </h2>
         {description ? (
           <div
-            className="max-w-2xl text-base leading-relaxed text-slate-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:text-slate-500"
+            onClickCapture={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.tagName === 'IMG') {
+                e.preventDefault();
+                setFullscreenImage((target as HTMLImageElement).src);
+                setImageZoom(1);
+              }
+            }}
+            className="max-w-2xl text-base leading-relaxed text-slate-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:text-slate-500 [&_img]:cursor-pointer [&_img]:hover:opacity-80 [&_img]:transition-opacity"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         ) : null}
@@ -184,21 +204,34 @@ export default function CategorySection({
             Resources
           </h4>
 
-          <a
-            href="#"
-            className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <Terminal size={18} className="text-slate-400" />
-              <span className="text-sm font-semibold text-slate-700">
-                MDN Documentation
-              </span>
+          {resources && resources.length > 0 ? (
+            <div className="space-y-2">
+              {resources.map((resource, i) => (
+                <a
+                  key={i}
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Terminal size={18} className="text-slate-400" />
+                    <span className="text-sm font-semibold text-slate-700">
+                      {resource.title}
+                    </span>
+                  </div>
+                  <ExternalLink
+                    size={14}
+                    className="text-slate-300 group-hover:text-slate-600"
+                  />
+                </a>
+              ))}
             </div>
-            <ExternalLink
-              size={14}
-              className="text-slate-300 group-hover:text-slate-600"
-            />
-          </a>
+          ) : (
+            <div className="p-4 rounded-xl border border-slate-200 text-sm text-slate-500">
+              No resources available
+            </div>
+          )}
         </div>
       </div>
 
@@ -311,6 +344,82 @@ export default function CategorySection({
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* IMAGE FULLSCREEN MODAL */}
+      {fullscreenImage && (
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close Button */}
+            <button
+              onClick={() => setFullscreenImage(null)}
+              className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+              aria-label="Close"
+            >
+              <X size={24} className="text-white" />
+            </button>
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg p-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImageZoom(Math.max(0.5, imageZoom - 0.2));
+                }}
+                className="p-2 hover:bg-white/20 rounded transition-colors"
+                aria-label="Zoom Out"
+              >
+                <ZoomOut size={20} className="text-white" />
+              </button>
+
+              <span className="text-white text-sm font-medium px-3 min-w-[60px] text-center">
+                {Math.round(imageZoom * 100)}%
+              </span>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImageZoom(Math.min(3, imageZoom + 0.2));
+                }}
+                className="p-2 hover:bg-white/20 rounded transition-colors"
+                aria-label="Zoom In"
+              >
+                <ZoomIn size={20} className="text-white" />
+              </button>
+
+              <div className="w-px h-6 bg-white/20 mx-1" />
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImageZoom(1);
+                }}
+                className="px-3 py-1 hover:bg-white/20 rounded transition-colors text-white text-sm font-medium"
+              >
+                Reset
+              </button>
+            </div>
+
+            {/* Image Container */}
+            <div
+              className="relative max-w-full max-h-full overflow-auto flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={fullscreenImage}
+                alt="Fullscreen view"
+                style={{
+                  transform: `scale(${imageZoom})`,
+                  transition: 'transform 0.2s ease-out',
+                }}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
           </div>
         </div>
       )}
