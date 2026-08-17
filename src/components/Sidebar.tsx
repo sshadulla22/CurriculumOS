@@ -28,20 +28,20 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
 
           return (
             <li key={item.id}>
-              <div className="flex items-center">
+              <div className="flex items-start">
                 <a
                   href={`#${item.id}`}
                   onClick={onClose}
-                  className={`flex-1 flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] transition-colors ${
+                  className={`flex-1 flex items-start gap-2 px-2 py-[5px] rounded-md text-[13px] transition-colors ${
                     isSection
                       ? 'text-slate-900 font-medium bg-gray-200'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-4 text-[10px] tabular-nums text-slate-600">
+                  <span className="w-4 text-[10px] tabular-nums text-slate-600 shrink-0 mt-[2px]">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="truncate">{item.title}</span>
+                  <span className="whitespace-normal break-words">{item.title}</span>
                 </a>
 
                 {item.subTopics && item.subTopics.length > 0 && (
@@ -50,7 +50,7 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                     onClick={() =>
                       setExpanded((p) => ({ ...p, [item.id]: !p[item.id] }))
                     }
-                    className="p-1.5 text-slate-300 hover:text-slate-600 rounded"
+                    className="p-1.5 text-slate-300 hover:text-slate-600 rounded shrink-0 mt-[2px]"
                     aria-expanded={isOpen}
                     aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${item.title}`}
                   >
@@ -75,7 +75,7 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                           activeId === sub.id
                             ? 'text-slate-900 font-medium'
                             : 'text-slate-400 hover:text-slate-700'
-                        }`}
+                        } whitespace-normal break-words`}
                       >
                         {sub.title}
                       </a>

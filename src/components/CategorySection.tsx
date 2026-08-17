@@ -144,7 +144,7 @@ export default function CategorySection({
 
         {/* Video */}
         {videoId && (
-          <div className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex h-88 flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
               <Play size={14} className="text-slate-400" />
               <span className="text-xs font-medium text-slate-500">
