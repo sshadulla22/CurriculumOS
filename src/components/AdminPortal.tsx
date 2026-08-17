@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AdminLogin from './AdminLogin';
 import CategorySection from './CategorySection';
@@ -40,7 +41,7 @@ type InterviewQuestion = {
 
 type Module = {
   id?: string;
-  trackId: string; // ← required now
+  trackId: string;
   index: number;
   title: string;
   description: string;
@@ -70,6 +71,8 @@ function mapDatabaseModule(row: any): Module {
 
 /* ---------- COMPONENT ---------- */
 export default function AdminPortal() {
+  const navigate = useNavigate();
+
   /* -- state -- */
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -87,10 +90,17 @@ export default function AdminPortal() {
   const [trackNameInput, setTrackNameInput] = useState('');
   const [trackRenameInput, setTrackRenameInput] = useState('');
   const [trackRenameOpen, setTrackRenameOpen] = useState(false);
-  const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+
+  const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
+  /* FIX 3: backup of the live HTML so nothing is ever lost on a re-mount */
+  const descriptionHtmlRef = useRef<string>('');
+  /* tracks which module id the editor DOM currently holds */
+  const loadedDescIdRef = useRef<string | null>(null);
+  /* remembers the signed-in user id, so token refresh doesn't reset state */
+  const userIdRef = useRef<string | null>(null);
 
   function showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
     const id = Date.now() + Math.random();
@@ -100,7 +110,19 @@ export default function AdminPortal() {
     }, 2800);
   }
 
-  /* -- helpers (no hooks) -- */
+  function requireSecretPin(label: string) {
+    const secretPin = '007';
+    const enteredPin = window.prompt(`To delete ${label}, enter the secret pin:`);
+
+    if (enteredPin !== secretPin) {
+      showToast('Invalid secret pin. Deletion cancelled.', 'error');
+      return false;
+    }
+
+    return true;
+  }
+
+  /* -- helpers -- */
   function updateModule<K extends keyof Module>(field: K, value: Module[K]) {
     setCurrentModule((prev) => (prev ? { ...prev, [field]: value } : null));
   }
@@ -123,10 +145,7 @@ export default function AdminPortal() {
 
   function removeNote(index: number) {
     if (!currentModule) return;
-    updateModule(
-      'notes',
-      currentModule.notes.filter((_, i) => i !== index)
-    );
+    updateModule('notes', currentModule.notes.filter((_, i) => i !== index));
   }
 
   function addQuestion() {
@@ -141,14 +160,12 @@ export default function AdminPortal() {
     if (!descriptionEditorRef.current) return;
     descriptionEditorRef.current.focus();
     document.execCommand(command, false, value);
-    updateModule('description', descriptionEditorRef.current.innerHTML);
+    const html = descriptionEditorRef.current.innerHTML;
+    descriptionHtmlRef.current = html;
+    updateModule('description', html);
   }
 
-  function updateQuestion(
-    index: number,
-    field: keyof InterviewQuestion,
-    value: string
-  ) {
+  function updateQuestion(index: number, field: keyof InterviewQuestion, value: string) {
     if (!currentModule) return;
     updateModule(
       'interviewQuestions',
@@ -166,7 +183,7 @@ export default function AdminPortal() {
     );
   }
 
-  /* -- fetch functions (defined before effects) -- */
+  /* -- fetch functions -- */
   async function fetchTracks() {
     setError('');
     const { data, error: fetchError } = await supabase
@@ -176,14 +193,16 @@ export default function AdminPortal() {
 
     if (fetchError) {
       setError(fetchError.message);
-      setTracks([]);
-      setCurrentTrack(null);
       return;
     }
 
     const list = (data ?? []) as Track[];
     setTracks(list);
-    setCurrentTrack((prev) => prev ?? list[0] ?? null);
+    /* keep the SAME object if the track still exists → no re-fetch loop */
+    setCurrentTrack((prev) => {
+      if (!prev) return list[0] ?? null;
+      return list.find((t) => t.id === prev.id) ? prev : (list[0] ?? null);
+    });
   }
 
   async function fetchModules(trackId: string) {
@@ -197,7 +216,6 @@ export default function AdminPortal() {
       .order('index', { ascending: true });
 
     if (fetchError) {
-      console.error('Fetch error:', fetchError);
       setError(fetchError.message);
       setModules([]);
     } else {
@@ -208,24 +226,14 @@ export default function AdminPortal() {
 
   async function addTrack() {
     const name = trackNameInput.trim();
-    if (!name) {
-      showToast('Roadmap name is required.', 'info');
-      return;
-    }
-
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || `roadmap-${Date.now()}`;
+    if (!name) { showToast('Roadmap name is required.', 'info'); return; }
+    const slug =
+      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
+      `roadmap-${Date.now()}`;
 
     const { data, error: insertError } = await supabase
       .from('roadmap_tracks')
-      .insert({
-        name,
-        slug,
-        description: '',
-        order_index: tracks.length,
-      })
+      .insert({ name, slug, description: '', order_index: tracks.length })
       .select()
       .single();
 
@@ -235,31 +243,22 @@ export default function AdminPortal() {
       return;
     }
 
-    const nextTrack = data as Track;
     setTrackFormOpen(false);
     setTrackNameInput('');
     await fetchTracks();
-    setCurrentTrack(nextTrack);
+    setCurrentTrack(data as Track);
     setCurrentModule(null);
     showToast(`Roadmap "${name}" added.`, 'success');
   }
 
   async function renameTrack() {
-    if (!currentTrack) {
-      showToast('Select a roadmap first.', 'info');
-      return;
-    }
-
+    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
     const newName = trackRenameInput.trim();
-    if (!newName) {
-      showToast('Roadmap name is required.', 'info');
-      return;
-    }
+    if (!newName) { showToast('Roadmap name is required.', 'info'); return; }
 
-    const slug = newName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || `roadmap-${Date.now()}`;
+    const slug =
+      newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
+      `roadmap-${Date.now()}`;
 
     const { data, error: renameError } = await supabase
       .from('roadmap_tracks')
@@ -275,7 +274,7 @@ export default function AdminPortal() {
     }
 
     const updatedTrack = data as Track;
-    setTracks((prev) => prev.map((track) => (track.id === updatedTrack.id ? updatedTrack : track)));
+    setTracks((prev) => prev.map((t) => (t.id === updatedTrack.id ? updatedTrack : t)));
     setCurrentTrack(updatedTrack);
     setTrackRenameOpen(false);
     setTrackRenameInput('');
@@ -283,72 +282,59 @@ export default function AdminPortal() {
   }
 
   async function deleteTrack() {
-    if (!currentTrack) {
-      showToast('Select a roadmap first.', 'info');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Delete roadmap "${currentTrack.name}" and all its modules?`
-    );
-    if (!confirmed) return;
+    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
+    if (!requireSecretPin(`roadmap "${currentTrack.name}"`)) return;
+    if (!window.confirm(`Delete roadmap "${currentTrack.name}" and all its modules?`)) return;
 
     const { error: moduleDeleteError } = await supabase
-      .from('roadmap_modules')
-      .delete()
-      .eq('track_id', currentTrack.id);
-
+      .from('roadmap_modules').delete().eq('track_id', currentTrack.id);
     if (moduleDeleteError) {
-      setError(moduleDeleteError.message);
       showToast(`Error deleting roadmap modules: ${moduleDeleteError.message}`, 'error');
       return;
     }
 
     const { error: trackDeleteError } = await supabase
-      .from('roadmap_tracks')
-      .delete()
-      .eq('id', currentTrack.id);
-
+      .from('roadmap_tracks').delete().eq('id', currentTrack.id);
     if (trackDeleteError) {
-      setError(trackDeleteError.message);
       showToast(`Error deleting roadmap: ${trackDeleteError.message}`, 'error');
       return;
     }
 
-    const remainingTracks = tracks.filter((track) => track.id !== currentTrack.id);
-    const nextTrack = remainingTracks[0] ?? null;
-
-    setTracks(remainingTracks);
-    setCurrentTrack(nextTrack);
+    const remaining = tracks.filter((t) => t.id !== currentTrack.id);
+    setTracks(remaining);
+    setCurrentTrack(remaining[0] ?? null);
     setCurrentModule(null);
     setModules([]);
     showToast(`Roadmap "${currentTrack.name}" deleted.`, 'success');
   }
 
-  /* ---------- EFFECTS (top level only) ---------- */
+  /* ---------- EFFECTS ---------- */
 
-  /* Auth */
+  /* FIX 1: Auth — ignore token refresh / same-user events */
   useEffect(() => {
     let mounted = true;
 
     async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (mounted) {
-        setUser(user);
-        setAuthLoading(false);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted) return;
+      userIdRef.current = user?.id ?? null;
+      setUser(user);
+      setAuthLoading(false);
     }
     checkUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setAuthLoading(false);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      // These fire every time you come back to the browser tab. Ignore them.
+      if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
+
+      const nextId = session?.user?.id ?? null;
+      if (nextId === userIdRef.current) return; // same user → do nothing
+
+      userIdRef.current = nextId;
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
     });
 
     return () => {
@@ -357,37 +343,51 @@ export default function AdminPortal() {
     };
   }, []);
 
-  /* Load tracks when user signs in */
+  /* Load tracks once per real user change */
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     fetchTracks();
-  }, [user]);
+  }, [user?.id]);
 
-  /* Load modules when track changes */
+  /* Load modules only when the track ID string changes */
   useEffect(() => {
-    if (!user || !currentTrack) return;
+    if (!user?.id || !currentTrack?.id) return;
     fetchModules(currentTrack.id);
-  }, [user, currentTrack]);
+  }, [user?.id, currentTrack?.id]);
 
+  /* Sync editor DOM only when the selected module actually changes */
   useEffect(() => {
-    if (!currentModule || !descriptionEditorRef.current) return;
-    const nextHtml = currentModule.description || '';
-    if (descriptionEditorRef.current.innerHTML !== nextHtml) {
-      descriptionEditorRef.current.innerHTML = nextHtml;
+    if (!currentModule) {
+      loadedDescIdRef.current = null;
+      descriptionHtmlRef.current = '';
+      return;
     }
-  }, [currentModule]);
+    const key = currentModule.id || 'new';
+    if (loadedDescIdRef.current !== key) {
+      loadedDescIdRef.current = key;
+      descriptionHtmlRef.current = currentModule.description || '';
+      if (descriptionEditorRef.current) {
+        descriptionEditorRef.current.innerHTML = descriptionHtmlRef.current;
+      }
+    }
+  }, [currentModule?.id]);
+
+  /* FIX 3: if the editor DOM node ever re-mounts, restore the last HTML */
+  function attachDescriptionRef(node: HTMLDivElement | null) {
+    descriptionEditorRef.current = node;
+    if (node && node.innerHTML !== descriptionHtmlRef.current) {
+      node.innerHTML = descriptionHtmlRef.current;
+    }
+  }
 
   /* ---------- ACTIONS ---------- */
 
   function handleAddNew() {
-    if (!currentTrack) {
-      showToast('Select a roadmap first.', 'info');
-      return;
-    }
-    const nextIndex =
-      modules.length > 0
-        ? Math.max(...modules.map((m) => m.index)) + 1
-        : 1;
+    if (!currentTrack) { showToast('Select a roadmap first.', 'info'); return; }
+    const nextIndex = modules.length > 0 ? Math.max(...modules.map((m) => m.index)) + 1 : 1;
+
+    loadedDescIdRef.current = null;
+    descriptionHtmlRef.current = 'Describe this lesson...';
 
     setCurrentModule({
       trackId: currentTrack.id,
@@ -406,24 +406,23 @@ export default function AdminPortal() {
 
   async function saveToDatabase() {
     if (!currentModule) return;
-    if (!currentModule.title.trim()) {
-      alert('Please enter a lesson title.');
-      return;
-    }
-    if (!currentModule.trackId) {
-      alert('Module has no track assigned.');
-      return;
-    }
+    if (!currentModule.title.trim()) { alert('Please enter a lesson title.'); return; }
+    if (!currentModule.trackId) { alert('Module has no track assigned.'); return; }
 
     setSaving(true);
     setError('');
+
+    /* always take the freshest HTML straight from the DOM */
+    const liveHtml = descriptionEditorRef.current
+      ? descriptionEditorRef.current.innerHTML
+      : currentModule.description;
 
     const moduleToSave = {
       ...(currentModule.id ? { id: currentModule.id } : {}),
       track_id: currentModule.trackId,
       index: Number(currentModule.index) || 1,
       title: currentModule.title.trim(),
-      description: currentModule.description.trim() || null,
+      description: liveHtml?.trim() || null,
       video_id: currentModule.videoId.trim() || null,
       code: currentModule.code || null,
       notes: currentModule.notes || [],
@@ -438,11 +437,12 @@ export default function AdminPortal() {
       .single();
 
     if (saveError) {
-      console.error('Save error:', saveError);
       setError(saveError.message);
       showToast(`Error saving: ${saveError.message}`, 'error');
     } else {
       const savedModule = mapDatabaseModule(data);
+      loadedDescIdRef.current = savedModule.id || 'new';
+      descriptionHtmlRef.current = savedModule.description || '';
       setCurrentModule(savedModule);
       await fetchModules(currentModule.trackId);
       showToast('Changes saved successfully.', 'success');
@@ -452,20 +452,12 @@ export default function AdminPortal() {
 
   async function deleteModule() {
     if (!currentModule) return;
-    if (!currentModule.id) {
-      setCurrentModule(null);
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Delete "${currentModule.title}" permanently?`
-    );
-    if (!confirmed) return;
+    if (!currentModule.id) { setCurrentModule(null); return; }
+    if (!requireSecretPin(`lesson "${currentModule.title}"`)) return;
+    if (!window.confirm(`Delete "${currentModule.title}" permanently?`)) return;
 
     const { error: deleteError } = await supabase
-      .from('roadmap_modules')
-      .delete()
-      .eq('id', currentModule.id);
+      .from('roadmap_modules').delete().eq('id', currentModule.id);
 
     if (deleteError) {
       showToast(`Error deleting: ${deleteError.message}`, 'error');
@@ -475,17 +467,36 @@ export default function AdminPortal() {
     setModules((prev) => prev.filter((m) => m.id !== currentModule.id));
     setCurrentModule(null);
     showToast('Module deleted.', 'success');
-    // refresh list for this track
     if (currentTrack) await fetchModules(currentTrack.id);
   }
 
   async function logout() {
     await supabase.auth.signOut();
+    userIdRef.current = null;
     setUser(null);
     setCurrentModule(null);
     setTracks([]);
     setCurrentTrack(null);
+    navigate('/');
   }
+
+  /* Memoized preview — stops the iframe reloading on tab switch */
+  const memoizedPreview = useMemo(() => {
+    if (!currentModule) return null;
+    return (
+      <CategorySection
+        id="preview-mode"
+        index={currentModule.index}
+        title={currentModule.title}
+        description={currentModule.description}
+        videoId={currentModule.videoId || undefined}
+        code={currentModule.code || undefined}
+        notes={currentModule.notes}
+        subTopics={currentModule.subTopics}
+        interviewQuestions={currentModule.interviewQuestions}
+      />
+    );
+  }, [currentModule]);
 
   /* ---------- RENDER ---------- */
 
@@ -501,10 +512,12 @@ export default function AdminPortal() {
   }
 
   if (!user) {
-    return <AdminLogin onLogin={() => window.location.reload()} />;
+    return <AdminLogin onLogin={() => navigate('/student')} />;
   }
 
-  if (loading) {
+  /* FIX 2: only show the full-screen loader on the FIRST load.
+     Never unmount the editor while a module is open. */
+  if (loading && !currentModule && modules.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="flex items-center gap-2.5 text-[13px] text-neutral-500">
@@ -608,12 +621,12 @@ export default function AdminPortal() {
           <div className="flex flex-wrap items-center gap-2">
             {tracks.map((track) => {
               const isActive = currentTrack?.id === track.id;
-
               return (
                 <button
                   key={track.id}
                   type="button"
                   onClick={() => {
+                    if (currentTrack?.id === track.id) return;
                     setCurrentTrack(track);
                     setCurrentModule(null);
                   }}
@@ -695,11 +708,8 @@ export default function AdminPortal() {
                     type="text"
                     value={trackRenameOpen ? trackRenameInput : trackNameInput}
                     onChange={(e) => {
-                      if (trackRenameOpen) {
-                        setTrackRenameInput(e.target.value);
-                      } else {
-                        setTrackNameInput(e.target.value);
-                      }
+                      if (trackRenameOpen) setTrackRenameInput(e.target.value);
+                      else setTrackNameInput(e.target.value);
                     }}
                     placeholder={trackRenameOpen ? 'Enter new roadmap name' : 'Enter roadmap name'}
                     className="h-10 w-full rounded-lg border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-900"
@@ -776,6 +786,7 @@ export default function AdminPortal() {
                 id="track-select"
                 value={currentTrack?.id ?? ''}
                 onChange={(e) => {
+                  if (e.target.value === currentTrack?.id) return;
                   const next = tracks.find((t) => t.id === e.target.value) ?? null;
                   setCurrentTrack(next);
                   setCurrentModule(null);
@@ -865,7 +876,7 @@ export default function AdminPortal() {
                 <div className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-neutral-200 bg-white/80 px-5 backdrop-blur">
                   <span className="text-[13px] font-medium">Editor</span>
                   <div className="flex items-center gap-2">
-                    {currentModule.id && (
+                    {/* {currentModule.id && (
                       <button
                         type="button"
                         onClick={deleteModule}
@@ -874,7 +885,7 @@ export default function AdminPortal() {
                       >
                         <Trash2 size={13} />
                       </button>
-                    )}
+                    )} */}
                     <button
                       type="button"
                       onClick={saveToDatabase}
@@ -921,9 +932,7 @@ export default function AdminPortal() {
                           type="number"
                           min="1"
                           value={currentModule.index}
-                          onChange={(e) =>
-                            updateModule('index', Number(e.target.value))
-                          }
+                          onChange={(e) => updateModule('index', Number(e.target.value))}
                           className="h-9 w-full rounded-md border border-neutral-200 px-3 text-[13px] tabular-nums outline-none transition-colors focus:border-neutral-900"
                         />
                       </div>
@@ -934,9 +943,7 @@ export default function AdminPortal() {
                         <input
                           type="text"
                           value={currentModule.videoId}
-                          onChange={(e) =>
-                            updateModule('videoId', e.target.value)
-                          }
+                          onChange={(e) => updateModule('videoId', e.target.value)}
                           placeholder="Ihy0QziLDf0"
                           className="h-9 w-full rounded-md border border-neutral-200 px-3 font-mono text-[12px] outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-900"
                         />
@@ -951,15 +958,16 @@ export default function AdminPortal() {
                       <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
                         <div className="flex flex-wrap items-center gap-1.5 border-b border-neutral-200 bg-neutral-50 px-2 py-2">
                           {[
-                            { label: 'B', command: 'bold', style: 'font-bold' },
-                            { label: 'I', command: 'italic', style: 'italic' },
-                            { label: 'U', command: 'underline', style: 'underline' },
+                            { label: 'B', command: 'bold' },
+                            { label: 'I', command: 'italic' },
+                            { label: 'U', command: 'underline' },
                             { label: '• List', command: 'insertUnorderedList' },
                             { label: '1. List', command: 'insertOrderedList' },
                           ].map((item) => (
                             <button
                               key={item.command}
                               type="button"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => applyDescriptionCommand(item.command)}
                               className="rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
                             >
@@ -969,12 +977,14 @@ export default function AdminPortal() {
                         </div>
 
                         <div
-                          ref={descriptionEditorRef}
+                          ref={attachDescriptionRef}
                           contentEditable
                           suppressContentEditableWarning
-                          onInput={(event) =>
-                            updateModule('description', event.currentTarget.innerHTML)
-                          }
+                          onInput={(event) => {
+                            const html = event.currentTarget.innerHTML;
+                            descriptionHtmlRef.current = html;
+                            updateModule('description', html);
+                          }}
                           data-placeholder="Describe this module..."
                           className="min-h-[120px] w-full resize-y overflow-auto bg-white p-3 text-[13px] leading-relaxed text-neutral-700 outline-none placeholder:text-neutral-300 focus:border-neutral-900 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_em]:italic [&_u]:underline"
                           style={{ whiteSpace: 'pre-wrap' }}
@@ -1015,16 +1025,11 @@ export default function AdminPortal() {
 
                     <div className="space-y-2">
                       {currentModule.notes.map((note, index) => (
-                        <div
-                          key={index}
-                          className="rounded-md border border-neutral-200 p-3"
-                        >
+                        <div key={index} className="rounded-md border border-neutral-200 p-3">
                           <div className="mb-2 flex items-center justify-between">
                             <select
                               value={note.type}
-                              onChange={(e) =>
-                                updateNote(index, 'type', e.target.value)
-                              }
+                              onChange={(e) => updateNote(index, 'type', e.target.value)}
                               className="h-6 rounded border border-neutral-200 bg-neutral-50 px-1.5 text-[11px] font-medium text-neutral-600 outline-none"
                             >
                               <option value="explainer">Explainer</option>
@@ -1043,17 +1048,13 @@ export default function AdminPortal() {
                           <input
                             type="text"
                             value={note.title}
-                            onChange={(e) =>
-                              updateNote(index, 'title', e.target.value)
-                            }
+                            onChange={(e) => updateNote(index, 'title', e.target.value)}
                             placeholder="Note title"
                             className="mb-2 h-8 w-full rounded-md border border-neutral-200 px-2.5 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:border-neutral-900"
                           />
                           <textarea
                             value={note.content}
-                            onChange={(e) =>
-                              updateNote(index, 'content', e.target.value)
-                            }
+                            onChange={(e) => updateNote(index, 'content', e.target.value)}
                             placeholder="Content"
                             className="min-h-16 w-full resize-y rounded-md border border-neutral-200 p-2.5 text-[13px] outline-none placeholder:text-neutral-300 focus:border-neutral-900"
                           />
@@ -1085,10 +1086,7 @@ export default function AdminPortal() {
 
                     <div className="space-y-2">
                       {currentModule.interviewQuestions.map((question, index) => (
-                        <div
-                          key={index}
-                          className="rounded-md border border-neutral-200 p-3"
-                        >
+                        <div key={index} className="rounded-md border border-neutral-200 p-3">
                           <div className="mb-2 flex items-center justify-between">
                             <span className="font-mono text-[11px] text-neutral-400">
                               Q{index + 1}
@@ -1105,17 +1103,13 @@ export default function AdminPortal() {
                           <input
                             type="text"
                             value={question.question}
-                            onChange={(e) =>
-                              updateQuestion(index, 'question', e.target.value)
-                            }
+                            onChange={(e) => updateQuestion(index, 'question', e.target.value)}
                             placeholder="Question"
                             className="mb-2 h-8 w-full rounded-md border border-neutral-200 px-2.5 text-[13px] font-medium outline-none placeholder:text-neutral-300 focus:border-neutral-900"
                           />
                           <textarea
                             value={question.answer}
-                            onChange={(e) =>
-                              updateQuestion(index, 'answer', e.target.value)
-                            }
+                            onChange={(e) => updateQuestion(index, 'answer', e.target.value)}
                             placeholder="Answer"
                             className="min-h-20 w-full resize-y rounded-md border border-neutral-200 bg-neutral-50 p-2.5 text-[13px] outline-none placeholder:text-neutral-300 focus:border-neutral-900"
                           />
@@ -1138,9 +1132,7 @@ export default function AdminPortal() {
               >
                 <div className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-5 backdrop-blur">
                   <Eye size={13} className="text-neutral-400" />
-                  <span className="text-[12px] font-medium text-neutral-500">
-                    Preview
-                  </span>
+                  <span className="text-[12px] font-medium text-neutral-500">Preview</span>
                   <span className="ml-auto flex items-center gap-1.5 text-[11px] text-neutral-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     Live
@@ -1149,17 +1141,7 @@ export default function AdminPortal() {
 
                 <div className="p-6">
                   <div className="rounded-lg border border-neutral-200 bg-white p-8">
-                    <CategorySection
-                      id="preview-mode"
-                      index={currentModule.index}
-                      title={currentModule.title}
-                      description={currentModule.description}
-                      videoId={currentModule.videoId || undefined}
-                      code={currentModule.code || undefined}
-                      notes={currentModule.notes}
-                      subTopics={currentModule.subTopics}
-                      interviewQuestions={currentModule.interviewQuestions}
-                    />
+                    {memoizedPreview}
                   </div>
                 </div>
               </section>

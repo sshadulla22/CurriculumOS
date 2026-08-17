@@ -1,4 +1,4 @@
-import { Menu, Search, Command, Settings } from 'lucide-react';
+import { Menu, Search, Command, Settings, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import CurriculumOSLogo from './CurriculumOSLogo';
 
@@ -13,76 +13,95 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
   const isAdmin = location.pathname === '/admin';
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex h-auto min-h-[56px] max-w-[1600px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 lg:gap-6">
+    <header className="fixed top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md antialiased">
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-4 sm:px-6">
+        
+        {/* Left Section: Logo & Mobile Menu */}
+        <div className="flex items-center gap-4">
           {!isAdmin && (
             <button
               onClick={onMenu}
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-50 xl:hidden"
+              className="inline-flex items-center justify-center rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 xl:hidden"
               aria-label="Open navigation"
             >
-              <Menu size={18} />
+              <Menu size={20} />
             </button>
           )}
 
-          <Link to="/" className="flex min-w-0 items-center gap-2 group" aria-label="CurriculumOS home">
-            <CurriculumOSLogo variant="horizontal" className="hidden min-[420px]:flex" />
+          <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
+            <CurriculumOSLogo variant="horizontal" className="h-6 w-auto" />
           </Link>
 
+          {/* Search Bar - Vercel Style */}
           {!isAdmin && (
-            <button
-              onClick={onSearch}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-400 transition-all hover:border-indigo-400 hover:bg-white group sm:max-w-[360px] sm:px-3 sm:py-2"
-            >
-              <Search size={14} className="shrink-0 group-hover:text-indigo-500" />
-              <span className="hidden min-[500px]:inline truncate text-[12px] font-medium">
-                Search documentation...
-              </span>
-              <span className="ml-auto hidden items-center gap-0.5 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-300 lg:flex">
-                <Command size={10} /> K
-              </span>
-            </button>
+            <div className="hidden md:block">
+              <button
+                onClick={onSearch}
+                className="group relative flex h-9 w-64 items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-500 transition-all hover:border-zinc-300 hover:bg-zinc-100"
+              >
+                <Search size={14} className="text-zinc-400 group-hover:text-zinc-600" />
+                <span className="text-[13px]">Search...</span>
+                <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-1 rounded border border-zinc-200 bg-white px-1.5 font-mono text-[10px] font-medium text-zinc-400 opacity-100 sm:flex">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </button>
+            </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-6">
+        {/* Right Section: Progress & Admin Toggle */}
+        <div className="flex items-center gap-3">
           {!isAdmin && (
-            <div className="hidden items-center gap-3 sm:flex">
+            <div className="hidden items-center gap-4 border-r border-zinc-200 pr-4 lg:flex">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black uppercase tracking-tighter text-slate-300">
-                  Progress
+                <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+                  Course Progress
                 </span>
-                <span className="text-[11px] tabular-nums font-bold text-slate-900">
-                  {Math.round(progress)}%
-                </span>
-              </div>
-              <div className="h-[4px] w-12 overflow-hidden rounded-full bg-slate-100 sm:w-20">
-                <div
-                  className="h-full bg-indigo-600 transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-zinc-100">
+                    <div
+                      className="h-full bg-black transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="min-w-[2ch] font-mono text-xs font-semibold text-zinc-900">
+                    {Math.round(progress)}%
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
           <Link
             to={isAdmin ? '/' : '/admin'}
-            className={`flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-wider transition-all sm:px-4 sm:text-[11px] ${
+            className={`inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 ${
               isAdmin
-                ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-500 hover:text-indigo-600'
+                ? 'bg-zinc-900 text-zinc-50 hover:bg-zinc-800'
+                : 'border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 shadow-sm'
             }`}
           >
             {isAdmin ? (
-              <>View Dashboard</>
+              <>
+                <LayoutDashboard size={14} />
+                <span>Dashboard</span>
+              </>
             ) : (
               <>
-                <Settings size={14} className="animate-spin-slow" />
-                <span className="hidden sm:inline">Admin Portal</span>
+                <Settings size={14} className="text-zinc-500" />
+                <span>Admin</span>
               </>
             )}
           </Link>
+          
+          {/* Mobile Search Icon Only */}
+          {!isAdmin && (
+            <button 
+              onClick={onSearch}
+              className="flex h-9 w-9 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 md:hidden"
+            >
+              <Search size={20} />
+            </button>
+          )}
         </div>
       </div>
     </header>

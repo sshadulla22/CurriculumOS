@@ -9,13 +9,6 @@ import CategorySection from './components/CategorySection';
 import SearchModal from './components/SearchModal';
 import AdminPortal from './components/AdminPortal';
 
-const DEFAULT_TRACKS = [
-  { id: 'javascript', name: 'JavaScript', description: 'Core language fundamentals.' },
-  { id: 'react', name: 'React', description: 'Component-driven UI development.' },
-  { id: 'next', name: 'Next', description: 'Full-stack app architecture.' },
-  { id: 'typescript', name: 'TypeScript', description: 'Strong typing for scalable apps.' },
-];
-
 function StudentDashboard() {
   const [roadmapData, setRoadmapData] = useState<any[]>([]);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -27,221 +20,108 @@ function StudentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const closeSidebar = useCallback(() => {
-    setSidebarOpen(false);
-  }, []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const toggleSearch = useCallback(() => setSearchOpen((prev) => !prev), []);
 
-  const toggleSearch = useCallback(() => {
-    setSearchOpen((previous) => !previous);
-  }, []);
-
+  // Fetch Tracks Logic (Optimized)
   useEffect(() => {
     async function fetchTracks() {
       if (!supabase) {
-        const fallbackTrack = {
-          id: 'default-track',
-          name: 'JavaScript Mastery',
-          description: 'Fundamentals through production architecture.',
-        };
-
-        setTracks([fallbackTrack]);
-        setCurrentTrack(fallbackTrack);
-        setRoadmapData(ROADMAP_DATA as any[]);
+        const fallback = { id: 'js', name: 'JavaScript', description: 'Mastery' };
+        setTracks([fallback]);
+        setCurrentTrack(fallback);
+        setRoadmapData(ROADMAP_DATA);
         setActiveId(ROADMAP_DATA[0]?.id ?? '');
-        setError('');
         setLoading(false);
         return;
       }
 
-      const { data: trackRows, error: trackError } = await supabase
+      const { data: list, error: e } = await supabase
         .from('roadmap_tracks')
         .select('*')
         .order('order_index', { ascending: true });
 
-      if (trackError) {
-        console.error('Error fetching tracks:', trackError);
-        setError(trackError.message);
-        setTracks([]);
-        setCurrentTrack(null);
+      if (e) {
+        setError(e.message);
         setLoading(false);
         return;
       }
 
-      const list = (trackRows ?? []) as any[];
-      setTracks(list);
-
-      const selectedTrack = list.find((track) => track.id === currentTrack?.id) ?? list[0] ?? null;
-      setCurrentTrack(selectedTrack);
-
-      if (!selectedTrack) {
-        setRoadmapData([]);
-        setActiveId('');
-        setLoading(false);
-        return;
-      }
-
-      const { data, error: fetchError } = await supabase
-        .from('roadmap_modules')
-        .select('*')
-        .eq('track_id', selectedTrack.id)
-        .order('index', { ascending: true });
-
-      if (fetchError) {
-        console.error('Error fetching roadmap:', fetchError);
-        setError(fetchError.message);
-      } else {
-        setRoadmapData(data ?? []);
-
-        if (data && data.length > 0) {
-          setActiveId(data[0].id);
-        } else {
-          setActiveId('');
-        }
-      }
-
+      setTracks(list || []);
+      if (list?.length) setCurrentTrack(list[0]);
       setLoading(false);
     }
-
     fetchTracks();
   }, []);
 
+  // Fetch Modules when Track changes
   useEffect(() => {
     if (!currentTrack || !supabase) return;
-
-    async function fetchModulesByTrack(trackId: string) {
-      setLoading(true);
-      setError('');
-
-      const { data, error: fetchError } = await supabase
+    async function fetchModules() {
+      const { data } = await supabase
         .from('roadmap_modules')
         .select('*')
-        .eq('track_id', trackId)
+        .eq('track_id', currentTrack.id)
         .order('index', { ascending: true });
-
-      if (fetchError) {
-        console.error('Error fetching roadmap modules:', fetchError);
-        setError(fetchError.message);
-        setRoadmapData([]);
-        setActiveId('');
-      } else {
-        setRoadmapData(data ?? []);
-        setActiveId((data ?? [])[0]?.id ?? '');
-      }
-
-      setLoading(false);
+      
+      setRoadmapData(data || []);
+      if (data?.length) setActiveId(data[0].id);
     }
-
-    fetchModulesByTrack(currentTrack.id);
+    fetchModules();
   }, [currentTrack]);
 
+  // Scroll Tracking (Vercel uses precise offsets)
   useEffect(() => {
-    if (roadmapData.length === 0) return;
-
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const documentHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
+      const winScroll = document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      setProgress((winScroll / height) * 100);
 
-      setProgress(
-        documentHeight > 0
-          ? Math.min(100, (scrollTop / documentHeight) * 100)
-          : 0
-      );
-
-      const sections =
-        document.querySelectorAll<HTMLElement>(
-          '[data-scroll-target]'
-        );
-
-      let currentId = roadmapData[0]?.id ?? '';
-
+      const sections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
+      let current = activeId;
       sections.forEach((section) => {
-        if (scrollTop >= section.offsetTop - 140) {
-          currentId = section.id;
+        if (winScroll >= section.offsetTop - 160) {
+          current = section.id;
         }
       });
-
-      setActiveId(currentId);
+      setActiveId(current);
     };
 
-    window.addEventListener('scroll', handleScroll, {
-      passive: true,
-    });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeId]);
 
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [roadmapData]);
-
+  // Keyboard Shortcuts
   useEffect(() => {
-    document.body.style.overflow =
-      sidebarOpen || searchOpen ? 'hidden' : '';
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [sidebarOpen, searchOpen]);
-
-  useEffect(() => {
-    const handleKeyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeSidebar();
-        setSearchOpen(false);
-      }
-
-      if (
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === 'k'
-      ) {
-        event.preventDefault();
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
         toggleSearch();
       }
+      if (e.key === 'Escape') closeSidebar();
     };
-
-    window.addEventListener('keydown', handleKeyboard);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyboard);
-    };
-  }, [closeSidebar, toggleSearch]);
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [toggleSearch, closeSidebar]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-sm text-slate-400">
-          Loading curriculum...
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-5">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center">
-          <h2 className="font-semibold text-rose-700">
-            Could not load curriculum
-          </h2>
-
-          <p className="mt-2 text-sm text-rose-600">
-            {error}
-          </p>
-        </div>
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 antialiased">
+    <div className="min-h-screen bg-white text-zinc-950 antialiased selection:bg-zinc-900 selection:text-white">
       <Navbar
         progress={progress}
         onMenu={() => setSidebarOpen(true)}
         onSearch={toggleSearch}
       />
 
-      <div className="flex min-h-screen w-full">
+      <div className="mx-auto flex max-w-full">
+        {/* Vercel-style Left Sidebar */}
         <Sidebar
           activeId={activeId}
           items={roadmapData}
@@ -249,42 +129,49 @@ function StudentDashboard() {
           onClose={closeSidebar}
         />
 
-        <main className="w-full min-w-0 flex-1 pt-20 xl:ml-64">
-          <header className="border-b border-slate-100 px-0 pb-8 pt-0">
-            <div className="sticky top-[72px] z-20 border-b border-slate-100 bg-white/90 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-12">
-              <div className="overflow-x-auto no-scrollbar">
-                <div className="flex min-w-max items-center gap-2">
-                  {tracks.map((track) => {
-                    const isActive = currentTrack?.id === track.id;
-
-                    return (
-                      <button
-                        key={track.id}
-                        type="button"
-                        onClick={() => setCurrentTrack(track)}
-                        className={`shrink-0 rounded-full border px-3 py-2 text-[12px] font-medium transition-colors ${
-                          isActive
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900'
-                        }`}
-                      >
-                        {track.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+        <main className="min-w-0 flex-1 px-4 pt-14 sm:px-6 lg:px-10 xl:ml-64">
+          
+          {/* Sub-header / Track Switcher */}
+          <div className="fixed top-14 z-30 -mx-4 mb-8 border-b border-zinc-100 bg-white/80 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
+            <div className="flex h-12 items-center justify-between">
+              <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {tracks.map((track) => (
+                  <button
+                    key={track.id}
+                    onClick={() => setCurrentTrack(track)}
+                    className={`relative whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-colors ${
+                      currentTrack?.id === track.id 
+                        ? 'text-zinc-950' 
+                        : 'text-zinc-500 hover:text-zinc-800'
+                    }`}
+                  >
+                    {track.name}
+                    {currentTrack?.id === track.id && (
+                      <div className="absolute inset-x-0 -bottom-[13px] h-0.5 bg-zinc-950" />
+                    )}
+                  </button>
+                ))}
+              </nav>
             </div>
+          </div>
 
-            <div className="max-w-xl px-4 pt-6 sm:px-6 lg:px-12 lg:pt-8">
-              <h1 className="mb-0 text-[28px] font-semibold leading-tight tracking-tight sm:text-[34px] lg:text-[40px]">
-                {currentTrack?.name ?? 'JavaScript Mastery'}
-              </h1>
+          {/* Hero Section */}
+          <header className="lg:mt-16">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-500">
+              <span>Curriculum</span>
+              <span>/</span>
+              <span className="text-zinc-900">{currentTrack?.name}</span>
             </div>
-
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-950 sm:text-5xl">
+              {currentTrack?.name}
+            </h1>
+            <p className="mt-4 max-w-2xl text-base text-zinc-600 leading-relaxed">
+              {currentTrack?.description || "Master the core principles and advanced patterns through hands-on modules."}
+            </p>
           </header>
 
-          <div className="px-4 sm:px-6 lg:px-12">
+          {/* Modules List */}
+          <div className="pb-20">
             {roadmapData.map((item, index) => (
               <CategorySection
                 key={item.id}
@@ -292,13 +179,11 @@ function StudentDashboard() {
                 index={index + 1}
                 title={item.title}
                 description={item.description}
-                videoId={item.video_id ?? undefined}
-                code={item.code ?? undefined}
-                notes={item.notes ?? []}
-                subTopics={item.sub_topics ?? []}
-                interviewQuestions={
-                  item.interview_questions ?? []
-                }
+                videoId={item.video_id}
+                code={item.code}
+                notes={item.notes || []}
+                subTopics={item.sub_topics || []}
+                interviewQuestions={item.interview_questions || []}
               />
             ))}
           </div>
@@ -318,8 +203,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<StudentDashboard />} />
+        <Route path="/" element={<AdminPortal />} />
         <Route path="/admin" element={<AdminPortal />} />
+        <Route path="/student" element={<StudentDashboard />} />
       </Routes>
     </BrowserRouter>
   );
