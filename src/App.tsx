@@ -14,6 +14,7 @@ function StudentDashboard() {
   const [tracks, setTracks] = useState<any[]>([]);
   const [currentTrack, setCurrentTrack] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [modulesLoading, setModulesLoading] = useState(false);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
   const [activeId, setActiveId] = useState('');
@@ -57,17 +58,33 @@ function StudentDashboard() {
   // Fetch Modules when Track changes
   useEffect(() => {
     if (!currentTrack || !supabase) return;
+    let cancelled = false;
+
     async function fetchModules() {
-      const { data } = await supabase
+      setModulesLoading(true);
+      setError('');
+
+      const { data, error: fetchError } = await supabase
         .from('roadmap_modules')
         .select('*')
         .eq('track_id', currentTrack.id)
         .order('index', { ascending: true });
-      
-      setRoadmapData(data || []);
-      if (data?.length) setActiveId(data[0].id);
+
+      if (cancelled) return;
+      if (fetchError) {
+        setError(fetchError.message);
+        setRoadmapData([]);
+      } else {
+        setRoadmapData(data || []);
+        setActiveId(data?.[0]?.id ?? '');
+      }
+      setModulesLoading(false);
     }
     fetchModules();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentTrack]);
 
   // Scroll Tracking (Vercel uses precise offsets)
@@ -139,6 +156,7 @@ function StudentDashboard() {
     
     <nav
       role="tablist"
+      aria-busy={modulesLoading}
       className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
     >
       {tracks.map((track) => {
@@ -150,6 +168,7 @@ function StudentDashboard() {
             aria-selected={isActive}
             aria-current={isActive ? 'page' : undefined}
             onClick={() => {
+              if (modulesLoading || isActive) return;
               setCurrentTrack(track);
               // Auto‑scroll active tab into view (mobile UX)
               const el = document.getElementById(`track-${track.id}`);
@@ -183,6 +202,13 @@ function StudentDashboard() {
       })}
     </nav>
 
+    {modulesLoading && (
+      <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-2 text-xs text-zinc-500">
+        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+        Loading modules
+      </div>
+    )}
+
     {/* Right fade – mobile only */}
     <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-white via-white/80 to-transparent lg:hidden" />
   </div>
@@ -204,20 +230,32 @@ function StudentDashboard() {
 
           {/* Modules List */}
           <div className="pb-20">
-            {roadmapData.map((item, index) => (
-              <CategorySection
-                key={item.id}
-                id={item.id}
-                index={index + 1}
-                title={item.title}
-                description={item.description}
-                videoId={item.video_id}
-                code={item.code}
-                notes={item.notes || []}
-                subTopics={item.sub_topics || []}
-                interviewQuestions={item.interview_questions || []}
-              />
-            ))}
+            {error && (
+              <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                Unable to load this roadmap: {error}
+              </div>
+            )}
+            {modulesLoading ? (
+              <div className="flex items-center gap-2 py-16 text-sm text-zinc-500" aria-live="polite">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+                Loading modules...
+              </div>
+            ) : (
+              roadmapData.map((item, index) => (
+                <CategorySection
+                  key={item.id}
+                  id={item.id}
+                  index={index + 1}
+                  title={item.title}
+                  description={item.description}
+                  videoId={item.video_id}
+                  code={item.code}
+                  notes={item.notes || []}
+                  subTopics={item.sub_topics || []}
+                  interviewQuestions={item.interview_questions || []}
+                />
+              ))
+            )}
           </div>
         </main>
       </div>

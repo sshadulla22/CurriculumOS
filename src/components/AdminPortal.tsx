@@ -90,6 +90,10 @@ export default function AdminPortal() {
   const [currentModule, setCurrentModule] = useState<Module | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [trackAction, setTrackAction] = useState<'add' | 'rename' | null>(null);
+  const [deletingTrack, setDeletingTrack] = useState(false);
+  const [deletingModule, setDeletingModule] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState('');
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -281,20 +285,22 @@ export default function AdminPortal() {
   async function fetchModules(trackId: string) {
     setLoading(true);
     setError('');
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('roadmap_modules')
+        .select('*')
+        .eq('track_id', trackId)
+        .order('index', { ascending: true });
 
-    const { data, error: fetchError } = await supabase
-      .from('roadmap_modules')
-      .select('*')
-      .eq('track_id', trackId)
-      .order('index', { ascending: true });
-
-    if (fetchError) {
-      setError(fetchError.message);
-      setModules([]);
-    } else {
-      setModules((data ?? []).map(mapDatabaseModule));
+      if (fetchError) {
+        setError(fetchError.message);
+        setModules([]);
+      } else {
+        setModules((data ?? []).map(mapDatabaseModule));
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function addTrack() {
@@ -307,24 +313,29 @@ export default function AdminPortal() {
       name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
       `roadmap-${Date.now()}`;
 
-    const { data, error: insertError } = await supabase
-      .from('roadmap_tracks')
-      .insert({ name, slug, description: '', order_index: tracks.length })
-      .select()
-      .single();
+    setTrackAction('add');
+    try {
+      const { data, error: insertError } = await supabase
+        .from('roadmap_tracks')
+        .insert({ name, slug, description: '', order_index: tracks.length })
+        .select()
+        .single();
 
-    if (insertError) {
-      setError(insertError.message);
-      showToast(`Error creating roadmap: ${insertError.message}`, 'error');
-      return;
+      if (insertError) {
+        setError(insertError.message);
+        showToast(`Error creating roadmap: ${insertError.message}`, 'error');
+        return;
+      }
+
+      setTrackFormOpen(false);
+      setTrackNameInput('');
+      await fetchTracks();
+      setCurrentTrack(data as Track);
+      setCurrentModule(null);
+      showToast(`Roadmap "${name}" added.`, 'success');
+    } finally {
+      setTrackAction(null);
     }
-
-    setTrackFormOpen(false);
-    setTrackNameInput('');
-    await fetchTracks();
-    setCurrentTrack(data as Track);
-    setCurrentModule(null);
-    showToast(`Roadmap "${name}" added.`, 'success');
   }
 
   async function renameTrack() {
@@ -342,25 +353,30 @@ export default function AdminPortal() {
       newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ||
       `roadmap-${Date.now()}`;
 
-    const { data, error: renameError } = await supabase
-      .from('roadmap_tracks')
-      .update({ name: newName, slug })
-      .eq('id', currentTrack.id)
-      .select()
-      .single();
+    setTrackAction('rename');
+    try {
+      const { data, error: renameError } = await supabase
+        .from('roadmap_tracks')
+        .update({ name: newName, slug })
+        .eq('id', currentTrack.id)
+        .select()
+        .single();
 
-    if (renameError) {
-      setError(renameError.message);
-      showToast(`Error renaming roadmap: ${renameError.message}`, 'error');
-      return;
+      if (renameError) {
+        setError(renameError.message);
+        showToast(`Error renaming roadmap: ${renameError.message}`, 'error');
+        return;
+      }
+
+      const updatedTrack = data as Track;
+      setTracks((prev) => prev.map((t) => (t.id === updatedTrack.id ? updatedTrack : t)));
+      setCurrentTrack(updatedTrack);
+      setTrackRenameOpen(false);
+      setTrackRenameInput('');
+      showToast(`Roadmap renamed to "${newName}".`, 'success');
+    } finally {
+      setTrackAction(null);
     }
-
-    const updatedTrack = data as Track;
-    setTracks((prev) => prev.map((t) => (t.id === updatedTrack.id ? updatedTrack : t)));
-    setCurrentTrack(updatedTrack);
-    setTrackRenameOpen(false);
-    setTrackRenameInput('');
-    showToast(`Roadmap renamed to "${newName}".`, 'success');
   }
 
   async function deleteTrack() {
@@ -370,31 +386,35 @@ export default function AdminPortal() {
     }
     if (!requireSecretPin(`roadmap "${currentTrack.name}"`)) return;
     if (!window.confirm(`Delete roadmap "${currentTrack.name}" and all its modules?`)) return;
+    setDeletingTrack(true);
+    try {
+      const { error: moduleDeleteError } = await supabase
+        .from('roadmap_modules')
+        .delete()
+        .eq('track_id', currentTrack.id);
+      if (moduleDeleteError) {
+        showToast(`Error deleting roadmap modules: ${moduleDeleteError.message}`, 'error');
+        return;
+      }
 
-    const { error: moduleDeleteError } = await supabase
-      .from('roadmap_modules')
-      .delete()
-      .eq('track_id', currentTrack.id);
-    if (moduleDeleteError) {
-      showToast(`Error deleting roadmap modules: ${moduleDeleteError.message}`, 'error');
-      return;
+      const { error: trackDeleteError } = await supabase
+        .from('roadmap_tracks')
+        .delete()
+        .eq('id', currentTrack.id);
+      if (trackDeleteError) {
+        showToast(`Error deleting roadmap: ${trackDeleteError.message}`, 'error');
+        return;
+      }
+
+      const remaining = tracks.filter((t) => t.id !== currentTrack.id);
+      setTracks(remaining);
+      setCurrentTrack(remaining[0] ?? null);
+      setCurrentModule(null);
+      setModules([]);
+      showToast(`Roadmap "${currentTrack.name}" deleted.`, 'success');
+    } finally {
+      setDeletingTrack(false);
     }
-
-    const { error: trackDeleteError } = await supabase
-      .from('roadmap_tracks')
-      .delete()
-      .eq('id', currentTrack.id);
-    if (trackDeleteError) {
-      showToast(`Error deleting roadmap: ${trackDeleteError.message}`, 'error');
-      return;
-    }
-
-    const remaining = tracks.filter((t) => t.id !== currentTrack.id);
-    setTracks(remaining);
-    setCurrentTrack(remaining[0] ?? null);
-    setCurrentModule(null);
-    setModules([]);
-    showToast(`Roadmap "${currentTrack.name}" deleted.`, 'success');
   }
 
   /* ---------- EFFECTS ---------- */
@@ -560,31 +580,40 @@ export default function AdminPortal() {
     }
     if (!requireSecretPin(`lesson "${currentModule.title}"`)) return;
     if (!window.confirm(`Delete "${currentModule.title}" permanently?`)) return;
+    setDeletingModule(true);
+    try {
+      const { error: deleteError } = await supabase
+        .from('roadmap_modules')
+        .delete()
+        .eq('id', currentModule.id);
 
-    const { error: deleteError } = await supabase
-      .from('roadmap_modules')
-      .delete()
-      .eq('id', currentModule.id);
+      if (deleteError) {
+        showToast(`Error deleting: ${deleteError.message}`, 'error');
+        return;
+      }
 
-    if (deleteError) {
-      showToast(`Error deleting: ${deleteError.message}`, 'error');
-      return;
+      setModules((prev) => prev.filter((m) => m.id !== currentModule.id));
+      setCurrentModule(null);
+      showToast('Module deleted.', 'success');
+      if (currentTrack) await fetchModules(currentTrack.id);
+    } finally {
+      setDeletingModule(false);
     }
-
-    setModules((prev) => prev.filter((m) => m.id !== currentModule.id));
-    setCurrentModule(null);
-    showToast('Module deleted.', 'success');
-    if (currentTrack) await fetchModules(currentTrack.id);
   }
 
   async function logout() {
-    await supabase.auth.signOut();
-    userIdRef.current = null;
-    setUser(null);
-    setCurrentModule(null);
-    setTracks([]);
-    setCurrentTrack(null);
-    navigate('/');
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      userIdRef.current = null;
+      setUser(null);
+      setCurrentModule(null);
+      setTracks([]);
+      setCurrentTrack(null);
+      navigate('/');
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   const memoizedPreview = useMemo(() => {
@@ -723,10 +752,11 @@ export default function AdminPortal() {
           <button
             type="button"
             onClick={logout}
+            disabled={loggingOut}
             className="flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 px-2 sm:px-2.5 text-[12px] text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
           >
-            <LogOut size={12} />
-            <span className="hidden sm:inline">Logout</span>
+            {loggingOut ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
+            <span className="hidden sm:inline">{loggingOut ? 'Logging out' : 'Logout'}</span>
           </button>
         </div>
       </header>
@@ -740,6 +770,7 @@ export default function AdminPortal() {
                 <button
                   key={track.id}
                   type="button"
+                  disabled={loading || deletingTrack || trackAction !== null}
                   onClick={() => {
                     if (currentTrack?.id === track.id) return;
                     setCurrentTrack(track);
@@ -751,7 +782,7 @@ export default function AdminPortal() {
                       : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 hover:text-black'
                   }`}
                 >
-                  {track.name}
+                  {loading && isActive ? <Loader2 size={12} className="animate-spin" /> : track.name}
                 </button>
               );
             })}
@@ -765,16 +796,19 @@ export default function AdminPortal() {
                       setTrackRenameInput(currentTrack.name);
                       setTrackRenameOpen(true);
                     }}
-                    className="rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black"
+                    disabled={loading || deletingTrack || trackAction !== null}
+                    className="rounded-full border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black disabled:opacity-50"
                   >
                     Rename
                   </button>
                   <button
                     type="button"
                     onClick={deleteTrack}
-                    className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-600 transition-colors hover:border-red-300 hover:text-red-700"
+                    disabled={loading || deletingTrack || trackAction !== null}
+                    className="flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-600 transition-colors hover:border-red-300 hover:text-red-700 disabled:opacity-50"
                   >
-                    Delete
+                    {deletingTrack && <Loader2 size={11} className="animate-spin" />}
+                    {deletingTrack ? 'Deleting' : 'Delete'}
                   </button>
                 </>
               )}
@@ -785,7 +819,8 @@ export default function AdminPortal() {
                   setTrackNameInput('');
                   setTrackFormOpen(true);
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-600 transition-colors hover:border-neutral-500 hover:text-black"
+                disabled={loading || deletingTrack || trackAction !== null}
+                className="flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 bg-white px-3 py-1.5 text-[12px] font-medium text-neutral-600 transition-colors hover:border-neutral-500 hover:text-black disabled:opacity-50"
               >
                 <Plus size={12} />
                 New Roadmap
@@ -849,9 +884,15 @@ export default function AdminPortal() {
                     <button
                       type="button"
                       onClick={trackRenameOpen ? renameTrack : addTrack}
-                      className="h-9 rounded-md bg-black px-3 text-sm font-medium text-white"
+                      disabled={trackAction !== null}
+                      className="h-9 rounded-md bg-black px-3 text-sm font-medium text-white disabled:opacity-50"
                     >
-                      {trackRenameOpen ? 'Save' : 'Add'}
+                      {trackAction ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2 size={13} className="animate-spin" />
+                          {trackAction === 'rename' ? 'Saving' : 'Adding'}
+                        </span>
+                      ) : trackRenameOpen ? 'Save' : 'Add'}
                     </button>
                   </div>
                 </div>
@@ -902,6 +943,7 @@ export default function AdminPortal() {
               <select
                 id="track-select"
                 value={currentTrack?.id ?? ''}
+                disabled={loading || deletingTrack || trackAction !== null}
                 onChange={(e) => {
                   if (e.target.value === currentTrack?.id) return;
                   const next = tracks.find((t) => t.id === e.target.value) ?? null;
@@ -919,7 +961,12 @@ export default function AdminPortal() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 py-2">
-              {modules.map((module) => (
+              {loading ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-[12px] text-neutral-400" aria-live="polite">
+                  <Loader2 size={14} className="animate-spin" />
+                  Loading modules
+                </div>
+              ) : modules.map((module) => (
                 <button
                   key={module.id}
                   type="button"
@@ -993,8 +1040,17 @@ export default function AdminPortal() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={deleteModule}
+                      disabled={saving || deletingModule}
+                      className="flex h-7 items-center gap-1.5 rounded-md border border-red-200 px-2.5 text-[12px] font-medium text-red-600 transition-colors hover:border-red-300 hover:text-red-700 disabled:opacity-40"
+                    >
+                      {deletingModule ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      {deletingModule ? 'Deleting' : 'Delete'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={saveToDatabase}
-                      disabled={saving}
+                      disabled={saving || deletingModule}
                       className="flex h-7 items-center gap-1.5 rounded-md bg-black px-3 text-[12px] font-medium text-white transition-colors hover:bg-neutral-800 disabled:opacity-40"
                     >
                       {saving ? (

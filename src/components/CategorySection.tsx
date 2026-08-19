@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Copy,
   Check,
@@ -65,13 +65,24 @@ export default function CategorySection({
 }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
 
   const handleCopy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopying(true);
+    setCopyError(false);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError(true);
+      setTimeout(() => setCopyError(false), 3000);
+    } finally {
+      setCopying(false);
+    }
   };
 
   return (
@@ -80,7 +91,7 @@ export default function CategorySection({
       className="py-10 md:py-0 border-b border-slate-200 scroll-mt-28"
     >
       {/* 1) HEADER */}
-      <div className="max-w-4xl mb-12">
+      <div className="max-w-4xl mb-12 py-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[10px] font-bold tracking-[0.2em] text-white bg-gray-800 px-2 py-1 rounded uppercase">
             Module {index}
@@ -123,11 +134,16 @@ export default function CategorySection({
               </div>
               <button
                 onClick={() => handleCopy(code)}
+                disabled={copying}
                 className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
                 aria-label="Copy code"
               >
-                {copied ? (
+                {copying ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
+                ) : copied ? (
                   <Check size={14} className="text-emerald-500" />
+                ) : copyError ? (
+                  <span className="text-[10px] font-semibold text-rose-500">!</span>
                 ) : (
                   <Copy size={14} />
                 )}
