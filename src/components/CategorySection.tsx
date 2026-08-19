@@ -77,12 +77,12 @@ export default function CategorySection({
   return (
     <section
       id={id}
-      className="py-16 md:py-24 border-b border-slate-200 scroll-mt-28"
+      className="py-10 md:py-0 border-b border-slate-200 scroll-mt-28"
     >
       {/* 1) HEADER */}
       <div className="max-w-4xl mb-12">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[10px] font-bold tracking-[0.2em] text-indigo-600 bg-indigo-50 px-2 py-1 rounded uppercase">
+          <span className="text-[10px] font-bold tracking-[0.2em] text-white bg-gray-800 px-2 py-1 rounded uppercase">
             Module {index}
           </span>
           <div className="h-px w-10 bg-slate-200" />

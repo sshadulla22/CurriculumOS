@@ -131,30 +131,62 @@ function StudentDashboard() {
 
         <main className="min-w-0 flex-1 px-4 pt-14 sm:px-6 lg:px-10 xl:ml-64">
           
-          {/* Sub-header / Track Switcher */}
-          <div className="fixed top-14 z-30 -mx-4 mb-8 border-b border-zinc-100 bg-white/80 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
-            <div className="flex h-12 items-center justify-between">
-              <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                {tracks.map((track) => (
-                  <button
-                    key={track.id}
-                    onClick={() => setCurrentTrack(track)}
-                    className={`relative whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-colors ${
-                      currentTrack?.id === track.id 
-                        ? 'text-zinc-950' 
-                        : 'text-zinc-500 hover:text-zinc-800'
-                    }`}
-                  >
-                    {track.name}
-                    {currentTrack?.id === track.id && (
-                      <div className="absolute inset-x-0 -bottom-[13px] h-0.5 bg-zinc-950" />
-                    )}
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
+         {/* Sub-header / Track Switcher */}
+<div className="sticky top-14 z-30 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md">
+  <div className="relative mx-auto max-w-7xl">
+    {/* Left fade – mobile only */}
+    <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-white via-white/80 to-transparent lg:hidden" />
+    
+    <nav
+      role="tablist"
+      className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
+    >
+      {tracks.map((track) => {
+        const isActive = currentTrack?.id === track.id;
+        return (
+          <button
+            key={track.id}
+            role="tab"
+            aria-selected={isActive}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => {
+              setCurrentTrack(track);
+              // Auto‑scroll active tab into view (mobile UX)
+              const el = document.getElementById(`track-${track.id}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }}
+            id={`track-${track.id}`}
+            className={`group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 ${
+              isActive
+                ? 'text-zinc-950'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            {/* Hover background pill (subtle) */}
+            <span
+              className={`absolute inset-x-1 inset-y-2 rounded-full transition-colors duration-200 ${
+                isActive
+                  ? 'bg-zinc-100/0'
+                  : 'bg-transparent group-hover:bg-zinc-100/70'
+              }`}
+            />
+            <span className="relative z-10">{track.name}</span>
 
+            {/* Smooth sliding underline */}
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 origin-left transform rounded-full bg-zinc-950 transition-transform duration-300 ease-out ${
+                isActive ? 'scale-x-100' : 'scale-x-0'
+              }`}
+            />
+          </button>
+        );
+      })}
+    </nav>
+
+    {/* Right fade – mobile only */}
+    <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-white via-white/80 to-transparent lg:hidden" />
+  </div>
+</div>
           {/* Hero Section */}
           <header className="mt-16">
             <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-500">
