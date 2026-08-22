@@ -350,3 +350,38 @@ body::-webkit-scrollbar { display: none; }
 .sidebar-active-indicator {
   animation: sidebar-slide-in 0.2s ease-out;
 }
+
+/* ═══════════════════════════════════════════════
+   ADMIN PORTAL FALLBACK UTILITIES
+   ═══════════════════════════════════════════════ */
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .bg-white\/80 { background-color: var(--bg-elevated) !important; }
+html[data-theme='dark'] .bg-neutral-50, 
+html[data-theme='dark'] .bg-neutral-50\/50, 
+html[data-theme='dark'] .bg-neutral-50\/60, 
+html[data-theme='dark'] .bg-neutral-50\/80 { background-color: var(--bg-muted) !important; }
+html[data-theme='dark'] .bg-neutral-100 { background-color: var(--bg-hover) !important; }
+html[data-theme='dark'] .bg-neutral-200, 
+html[data-theme='dark'] .bg-neutral-200\/60 { background-color: var(--bg-active) !important; }
+html[data-theme='dark'] .bg-neutral-950 { background-color: var(--code-bg) !important; }
+
+html[data-theme='dark'] .text-neutral-900 { color: var(--text-primary) !important; }
+html[data-theme='dark'] .text-neutral-700 { color: var(--text-secondary) !important; }
+html[data-theme='dark'] .text-neutral-600 { color: var(--text-secondary) !important; }
+html[data-theme='dark'] .text-neutral-500 { color: var(--text-tertiary) !important; }
+html[data-theme='dark'] .text-neutral-400 { color: var(--text-muted) !important; }
+html[data-theme='dark'] .text-neutral-300 { color: var(--text-muted) !important; }
+html[data-theme='dark'] .text-neutral-200 { color: var(--text-muted) !important; }
+html[data-theme='dark'] .text-black { color: var(--text-primary) !important; }
+
+html[data-theme='dark'] .border-neutral-100 { border-color: var(--border-secondary) !important; }
+html[data-theme='dark'] .border-neutral-200 { border-color: var(--border-primary) !important; }
+html[data-theme='dark'] .border-neutral-300 { border-color: var(--border-strong) !important; }
+html[data-theme='dark'] .border-neutral-400 { border-color: var(--border-strong) !important; }
+
+html[data-theme='dark'] .bg-black { background-color: var(--accent-bg) !important; color: var(--accent-text) !important; }
+html[data-theme='dark'] .text-white { color: var(--accent-text) !important; }
+
+html[data-theme='dark'] .hover\:bg-neutral-100:hover { background-color: var(--bg-hover) !important; }
+html[data-theme='dark'] .hover\:bg-neutral-800:hover { background-color: var(--accent-hover) !important; }
+html[data-theme='dark'] .hover\:text-black:hover { color: var(--text-primary) !important; }
