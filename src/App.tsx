@@ -106,27 +106,37 @@ function StudentDashboard() {
 
       setError('');
 
-      const { data, error: fetchError } = await supabase
-        .from('roadmap_modules')
-        .select('*')
-        .eq('track_id', currentTrack.id)
-        .order('index', { ascending: true });
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('roadmap_modules')
+          .select('*')
+          .eq('track_id', currentTrack.id || currentTrack.track_id)
+          .order('index', { ascending: true });
 
-      if (cancelled) return;
-      
-      if (fetchError) {
-        if (!cachedModules) {
-          setError(fetchError.message);
+        if (cancelled) return;
+        
+        if (fetchError) {
+          if (!cachedModules) {
+            setError(fetchError.message);
+            setRoadmapData([]);
+          }
+        } else {
+          localStorage.setItem(cacheKey, JSON.stringify(data || []));
+          setRoadmapData(data || []);
+          if (!cachedModules) {
+            setActiveId(data?.[0]?.id ?? '');
+          }
+        }
+      } catch (err: any) {
+        if (!cancelled && !cachedModules) {
+          setError(err.message || 'An unexpected error occurred while loading modules.');
           setRoadmapData([]);
         }
-      } else {
-        localStorage.setItem(cacheKey, JSON.stringify(data || []));
-        setRoadmapData(data || []);
-        if (!cachedModules) {
-          setActiveId(data?.[0]?.id ?? '');
+      } finally {
+        if (!cancelled) {
+          setModulesLoading(false);
         }
       }
-      setModulesLoading(false);
     }
     fetchModules();
 
@@ -260,20 +270,22 @@ function StudentDashboard() {
                 className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
               >
                 {tracks.map((track) => {
-                  const isActive = currentTrack?.id === track.id;
+                  const trackId = track.id || track.track_id;
+                  const currentTrackId = currentTrack?.id || currentTrack?.track_id;
+                  const isActive = currentTrackId === trackId;
                   return (
                     <button
-                      key={track.id}
+                      key={trackId}
                       role="tab"
                       aria-selected={isActive}
                       aria-current={isActive ? 'page' : undefined}
                       onClick={() => {
                         if (modulesLoading || isActive) return;
                         setCurrentTrack(track);
-                        const el = document.getElementById(`track-${track.id}`);
+                        const el = document.getElementById(`track-${trackId}`);
                         el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                       }}
-                      id={`track-${track.id}`}
+                      id={`track-${trackId}`}
                       className="group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2"
                       style={{
                         color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
