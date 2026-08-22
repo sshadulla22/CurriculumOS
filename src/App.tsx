@@ -43,19 +43,34 @@ function StudentDashboard() {
         return;
       }
 
+      const cachedTracks = localStorage.getItem('curriculum-os-tracks');
+      if (cachedTracks) {
+        try {
+          const parsed = JSON.parse(cachedTracks);
+          setTracks(parsed);
+          if (parsed.length) setCurrentTrack(parsed[0]);
+          setLoading(false);
+        } catch (e) {
+          // ignore parsing errors
+        }
+      }
+
       const { data: list, error: e } = await supabase
         .from('roadmap_tracks')
         .select('*')
         .order('order_index', { ascending: true });
 
       if (e) {
-        setError(e.message);
-        setLoading(false);
+        if (!cachedTracks) {
+          setError(e.message);
+          setLoading(false);
+        }
         return;
       }
 
+      localStorage.setItem('curriculum-os-tracks', JSON.stringify(list || []));
       setTracks(list || []);
-      if (list?.length) setCurrentTrack(list[0]);
+      if (!cachedTracks && list?.length) setCurrentTrack(list[0]);
       setLoading(false);
     }
     fetchTracks();
@@ -67,7 +82,22 @@ function StudentDashboard() {
     let cancelled = false;
 
     async function fetchModules() {
-      setModulesLoading(true);
+      const cacheKey = `curriculum-os-modules-${currentTrack.id}`;
+      const cachedModules = localStorage.getItem(cacheKey);
+
+      if (cachedModules) {
+        try {
+          const parsed = JSON.parse(cachedModules);
+          setRoadmapData(parsed);
+          setActiveId(parsed?.[0]?.id ?? '');
+          setModulesLoading(false);
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setModulesLoading(true);
+      }
+
       setError('');
 
       const { data, error: fetchError } = await supabase
@@ -77,12 +107,18 @@ function StudentDashboard() {
         .order('index', { ascending: true });
 
       if (cancelled) return;
+      
       if (fetchError) {
-        setError(fetchError.message);
-        setRoadmapData([]);
+        if (!cachedModules) {
+          setError(fetchError.message);
+          setRoadmapData([]);
+        }
       } else {
+        localStorage.setItem(cacheKey, JSON.stringify(data || []));
         setRoadmapData(data || []);
-        setActiveId(data?.[0]?.id ?? '');
+        if (!cachedModules) {
+          setActiveId(data?.[0]?.id ?? '');
+        }
       }
       setModulesLoading(false);
     }
