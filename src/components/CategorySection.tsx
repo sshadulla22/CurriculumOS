@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Copy,
   Check,
@@ -106,11 +107,15 @@ export default function CategorySection({
   };
 
   return (
-    <section
+    <motion.section
       id={id}
       data-scroll-target
       className="py-10 md:py-0 scroll-mt-28"
       style={{ borderBottom: '1px solid var(--border-primary)' }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
     >
       {/* 1) HEADER */}
       <div className="max-w-screen mb-12 py-6">
@@ -272,9 +277,11 @@ export default function CategorySection({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {notes.map((note, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="p-4 border-l-4"
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="p-4 border-l-4 rounded-r-lg shadow-sm"
                 style={noteStyle(note.type)}
               >
                 <h5
@@ -289,7 +296,7 @@ export default function CategorySection({
                 >
                   {note.content}
                 </p>
-              </div>
+              </motion.div>
             ))}
 
             {notes.length === 0 && (
@@ -603,6 +610,6 @@ export default function CategorySection({
           </div>
         </div>
       )}
-    </section>
+    </motion.section>
   );
 }

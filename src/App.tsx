@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUp } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import { ROADMAP_DATA } from './data/roadmap';
 
@@ -171,12 +173,16 @@ function StudentDashboard() {
 
   return (
     <div
-      className="min-h-screen antialiased"
+      className="min-h-screen antialiased relative"
       style={{
         backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)',
       }}
     >
+      {/* Ambient Background Orbs */}
+      <div className="ambient-orb ambient-orb-1" />
+      <div className="ambient-orb ambient-orb-2" />
+      
       <Navbar
         progress={progress}
         onMenu={() => setSidebarOpen(true)}
@@ -351,6 +357,25 @@ function StudentDashboard() {
         onClose={() => setSearchOpen(false)}
         items={roadmapData}
       />
+
+      {/* Floating Back to Top Button */}
+      <AnimatePresence>
+        {progress > 15 && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.8 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full shadow-xl glass-panel"
+            style={{ color: 'var(--text-primary)' }}
+            aria-label="Back to top"
+          >
+            <ArrowUp size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

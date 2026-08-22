@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, X, ChevronRight, Hash, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SearchItem {
   id: string;
@@ -36,23 +37,26 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
     return searchResults.slice(0, 8); // Limit results
   }, [query, items]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-16 sm:px-4 sm:pt-20">
-      <div
-        className="fixed inset-0 backdrop-blur-[2px]"
-        style={{ backgroundColor: 'var(--bg-backdrop)' }}
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-16 sm:px-4 sm:pt-20">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 backdrop-blur-sm"
+            style={{ backgroundColor: 'var(--bg-backdrop)' }}
+            onClick={onClose}
+          />
 
-      <div
-        className="relative w-full max-w-[92vw] overflow-hidden rounded-xl shadow-2xl sm:max-w-lg"
-        style={{
-          border: '1px solid var(--border-primary)',
-          backgroundColor: 'var(--search-bg)',
-        }}
-      >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-[92vw] overflow-hidden rounded-xl shadow-2xl sm:max-w-lg glass-panel"
+          >
         <div
           className="flex items-center px-3 py-3 sm:px-4"
           style={{ borderBottom: '1px solid var(--border-secondary)' }}
@@ -165,7 +169,9 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
             </span>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

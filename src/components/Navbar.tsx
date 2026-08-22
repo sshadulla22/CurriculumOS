@@ -1,5 +1,6 @@
 import { Menu, Search, Settings, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import CurriculumOSLogo from './CurriculumOSLogo';
 import ThemeToggle from './ThemeToggle';
 
@@ -15,12 +16,21 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
 
   return (
     <header
-      className="fixed top-0 z-50 w-full backdrop-blur-md antialiased"
+      className="fixed top-0 z-50 w-full antialiased glass-panel"
       style={{
-        backgroundColor: 'var(--bg-blur)',
         borderBottom: '1px solid var(--border-primary)',
       }}
     >
+      {/* Global Reading Progress Bar */}
+      {!isAdmin && (
+        <motion.div 
+          className="absolute top-0 left-0 h-[2px] z-50"
+          style={{ backgroundColor: 'var(--color-primary)' }}
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ ease: "easeOut", duration: 0.2 }}
+        />
+      )}
       <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-4 sm:px-6">
         
         {/* Left Section: Logo & Mobile Menu */}

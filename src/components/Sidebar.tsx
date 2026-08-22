@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarItem {
   id: string;
@@ -93,9 +94,13 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                 >
                   {/* Active indicator bar */}
                   {isSection && (
-                    <span
-                      className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full sidebar-active-indicator"
+                    <motion.span
+                      layoutId="sidebar-active-indicator"
+                      className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full"
                       style={{ backgroundColor: 'var(--sidebar-indicator)' }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                     />
                   )}
                   <span
@@ -128,29 +133,40 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                 )}
               </div>
 
-              {isOpen && item.subTopics && (
-                <ul
-                  className="ml-[18px] pl-2 mt-0.5 mb-1 space-y-px"
-                  style={{ borderLeft: '1px solid var(--border-secondary)' }}
-                >
-                  {item.subTopics.map((sub) => (
-                    <li key={sub.id}>
-                      <a
-                        id={`sidebar-${sub.id}`}
-                        href={`#${sub.id}`}
-                        onClick={onClose}
-                        className="block px-2 py-[4px] rounded text-[12px] transition-colors whitespace-normal break-words"
-                        style={{
-                          color: activeId === sub.id ? 'var(--text-primary)' : 'var(--text-muted)',
-                          fontWeight: activeId === sub.id ? 500 : 400,
-                        }}
+              <AnimatePresence>
+                {isOpen && item.subTopics && (
+                  <motion.ul
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="ml-[18px] pl-2 mt-0.5 mb-1 space-y-px overflow-hidden"
+                    style={{ borderLeft: '1px solid var(--border-secondary)' }}
+                  >
+                    {item.subTopics.map((sub) => (
+                      <motion.li 
+                        key={sub.id}
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        {sub.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        <a
+                          id={`sidebar-${sub.id}`}
+                          href={`#${sub.id}`}
+                          onClick={onClose}
+                          className="block px-2 py-[4px] rounded text-[12px] transition-colors whitespace-normal break-words"
+                          style={{
+                            color: activeId === sub.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                            fontWeight: activeId === sub.id ? 500 : 400,
+                          }}
+                        >
+                          {sub.title}
+                        </a>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </li>
           );
         })}
