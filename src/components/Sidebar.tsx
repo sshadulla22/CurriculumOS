@@ -62,8 +62,9 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
 
       <ul className="space-y-0.5">
         {items.map((item, i) => {
-          const isSection =
-            activeId === item.id || item.subTopics?.some((s) => s.id === activeId);
+          const isSectionExactActive = activeId === item.id;
+          const isSectionActive =
+            isSectionExactActive || item.subTopics?.some((s) => s.id === activeId);
           const isOpen = expanded[item.id];
 
           return (
@@ -75,32 +76,32 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                   onClick={onClose}
                   className="flex-1 flex items-start gap-2 px-2 py-[5px] rounded-md text-[13px] transition-all duration-200 relative"
                   style={{
-                    color: isSection ? 'var(--text-primary)' : 'var(--text-muted)',
-                    fontWeight: isSection ? 500 : 400,
-                    backgroundColor: isSection ? 'var(--sidebar-active-bg)' : 'transparent',
+                    color: isSectionActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontWeight: isSectionActive ? 500 : 400,
+                    backgroundColor: isSectionActive ? 'var(--sidebar-active-bg)' : 'transparent',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSection) {
+                    if (!isSectionActive) {
                       e.currentTarget.style.backgroundColor = 'var(--sidebar-hover-bg)';
                       e.currentTarget.style.color = 'var(--text-primary)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isSection) {
+                    if (!isSectionActive) {
                       e.currentTarget.style.backgroundColor = 'transparent';
                       e.currentTarget.style.color = 'var(--text-muted)';
                     }
                   }}
                 >
                   {/* Active indicator bar */}
-                  {isSection && (
+                  {isSectionExactActive && (
                     <motion.span
-                      layoutId="sidebar-active-indicator"
                       className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full"
                       style={{ backgroundColor: 'var(--sidebar-indicator)' }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, scaleY: 0.5 }}
+                      animate={{ opacity: 1, scaleY: 1 }}
+                      exit={{ opacity: 0, scaleY: 0.5 }}
+                      transition={{ duration: 0.2 }}
                     />
                   )}
                   <span
@@ -154,12 +155,23 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                           id={`sidebar-${sub.id}`}
                           href={`#${sub.id}`}
                           onClick={onClose}
-                          className="block px-2 py-[4px] rounded text-[12px] transition-colors whitespace-normal break-words"
+                          className="block px-2 py-[4px] rounded text-[12px] transition-colors whitespace-normal break-words relative"
                           style={{
                             color: activeId === sub.id ? 'var(--text-primary)' : 'var(--text-muted)',
                             fontWeight: activeId === sub.id ? 500 : 400,
                           }}
                         >
+                          {/* Active indicator bar for subtopic */}
+                          {activeId === sub.id && (
+                            <motion.span
+                              className="absolute -left-[6px] top-[4px] bottom-[4px] w-[2px] rounded-full"
+                              style={{ backgroundColor: 'var(--sidebar-indicator)' }}
+                              initial={{ opacity: 0, scaleY: 0.5 }}
+                              animate={{ opacity: 1, scaleY: 1 }}
+                              exit={{ opacity: 0, scaleY: 0.5 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          )}
                           {sub.title}
                         </a>
                       </motion.li>

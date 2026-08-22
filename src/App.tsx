@@ -120,15 +120,18 @@ function StudentDashboard() {
 
         // Pick the topmost visible section (based on DOM order)
         const allSections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
+        let found = false;
         for (const section of allSections) {
           if (activeSectionsRef.current.has(section.id)) {
             setActiveId(section.id);
+            found = true;
             break;
           }
         }
+        // If no sections intersect (e.g. fast scrolling), keep the last activeId.
       },
       {
-        rootMargin: '-80px 0px -60% 0px',
+        rootMargin: '-10% 0px -60% 0px',
         threshold: 0,
       }
     );
@@ -209,14 +212,6 @@ function StudentDashboard() {
             }}
           >
             <div className="relative mx-auto max-w-7xl">
-              {/* Left fade – mobile only */}
-              <div
-                className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 lg:hidden"
-                style={{
-                  background: `linear-gradient(to right, var(--fade-from), var(--fade-transparent))`,
-                }}
-              />
-              
               <nav
                 role="tablist"
                 aria-busy={modulesLoading}

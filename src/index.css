@@ -303,13 +303,14 @@ body::-webkit-scrollbar { display: none; }
   position: fixed;
   border-radius: 50%;
   filter: blur(100px);
-  opacity: 0.4;
   pointer-events: none;
   z-index: 0;
   animation: float 20s infinite ease-in-out alternate;
+  display: none;
 }
 
 html[data-theme='dark'] .ambient-orb {
+  display: block;
   opacity: 0.15;
 }
 
