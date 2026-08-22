@@ -72,7 +72,11 @@ function StudentDashboard() {
         return;
       }
 
-      localStorage.setItem('curriculum-os-tracks', JSON.stringify(list || []));
+      try {
+        localStorage.setItem('curriculum-os-tracks', JSON.stringify(list || []));
+      } catch (storageErr) {
+        console.warn('Could not cache tracks, quota exceeded', storageErr);
+      }
       setTracks(list || []);
       if (!didSetTrackFromCache && list && list.length > 0) {
         setCurrentTrack(list[0]);
@@ -121,7 +125,11 @@ function StudentDashboard() {
             setRoadmapData([]);
           }
         } else {
-          localStorage.setItem(cacheKey, JSON.stringify(data || []));
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(data || []));
+          } catch (storageErr) {
+            console.warn('Could not cache modules, quota exceeded', storageErr);
+          }
           setRoadmapData(data || []);
           if (!cachedModules) {
             setActiveId(data?.[0]?.id ?? '');
