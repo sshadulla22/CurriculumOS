@@ -339,23 +339,23 @@ function StudentDashboard() {
           </div>
 
           {/* Hero Section */}
-          <header className="mt-16">
+          <header className="mt-2">
             <div className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
               <span>Curriculum</span>
-              <span>/</span>
+              <span>/</span>  
               <span style={{ color: 'var(--text-primary)' }}>{currentTrack?.name}</span>
             </div>
-            <h1
-              className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl"
+            <h1 
+              className="mt-3 text-3xl font-bold tracking-tight sm:text-3xl"
               style={{ color: 'var(--text-heading)' }}
             >
-              {currentTrack?.name}
+              {/* {currentTrack?.name} */}
             </h1>
             <p
               className="mt-4 max-w-2xl text-base leading-relaxed"
               style={{ color: 'var(--text-tertiary)' }}
             >
-              {currentTrack?.description || "Master the core principles and advanced patterns through hands-on modules."}
+              {/* {currentTrack?.description || "Master the core principles and advanced patterns through hands-on modules."} */}
             </p>
           </header>
 

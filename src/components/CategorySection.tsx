@@ -121,7 +121,7 @@ export default function CategorySection({
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       {/* 1) HEADER */}
-      <div className="max-w-screen mb-12 py-6">
+      <div className="mb-4">
         <div className="flex items-center gap-3 mb-4">
           <span
             className="text-[10px] font-bold tracking-[0.2em] px-2 py-1 rounded uppercase"
@@ -136,7 +136,7 @@ export default function CategorySection({
         </div>
 
         <h2
-          className="text-3xl md:text-4xl font-semibold mb-4 tracking-tight"
+          className="text-3xl md:text-3xl font-semibold mb-4 tracking-tight"
           style={{ color: 'var(--text-heading)' }}
         >
           {title}
@@ -512,9 +512,8 @@ export default function CategorySection({
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`transition-transform ${
-                      openFaq === i ? 'rotate-180' : ''
-                    }`}
+                    className={`transition-transform ${openFaq === i ? 'rotate-180' : ''
+                      }`}
                     style={{ color: 'var(--text-muted)' }}
                   />
                 </button>
