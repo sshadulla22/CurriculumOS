@@ -43,12 +43,16 @@ function StudentDashboard() {
         return;
       }
 
+      let didSetTrackFromCache = false;
       const cachedTracks = localStorage.getItem('curriculum-os-tracks');
       if (cachedTracks) {
         try {
           const parsed = JSON.parse(cachedTracks);
           setTracks(parsed);
-          if (parsed.length) setCurrentTrack(parsed[0]);
+          if (parsed.length > 0) {
+            setCurrentTrack(parsed[0]);
+            didSetTrackFromCache = true;
+          }
           setLoading(false);
         } catch (e) {
           // ignore parsing errors
@@ -70,7 +74,9 @@ function StudentDashboard() {
 
       localStorage.setItem('curriculum-os-tracks', JSON.stringify(list || []));
       setTracks(list || []);
-      if (!cachedTracks && list?.length) setCurrentTrack(list[0]);
+      if (!didSetTrackFromCache && list && list.length > 0) {
+        setCurrentTrack(list[0]);
+      }
       setLoading(false);
     }
     fetchTracks();
