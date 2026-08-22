@@ -191,7 +191,7 @@ function StudentDashboard() {
         // If no sections intersect (e.g. fast scrolling), keep the last activeId.
       },
       {
-        rootMargin: '-10% 0px -60% 0px',
+        rootMargin: '-112px 0px -60% 0px',
         threshold: 0,
       }
     );
@@ -256,26 +256,27 @@ function StudentDashboard() {
         {/* Left Sidebar */}
         <Sidebar
           activeId={activeId}
+          onSelect={setActiveId}
           items={roadmapData}
           open={sidebarOpen}
           onClose={closeSidebar}
         />
 
-        <main className="min-w-0 flex-1 px-4 pt-14 sm:px-6 lg:px-10 xl:ml-64">
+        <main className="min-w-0 flex-1 px-4 pt-28 sm:px-6 lg:px-10 xl:ml-64">
           
-         {/* Sub-header / Track Switcher */}
+         {/* Sub-header / Track Switcher (Fixed Navbar section) */}
           <div
-            className="sticky top-14 z-30 w-full backdrop-blur-md"
+            className="fixed top-14 left-0 right-0 xl:left-64 z-30 h-12 backdrop-blur-md px-4 sm:px-6 lg:px-10"
             style={{
               borderBottom: '1px solid var(--border-primary)',
               backgroundColor: 'var(--bg-blur)',
             }}
           >
-            <div className="relative mx-auto max-w-7xl">
+            <div className="relative w-full h-full flex items-center">
               <nav
                 role="tablist"
                 aria-busy={modulesLoading}
-                className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
+                className="no-scrollbar flex h-full items-center gap-1 overflow-x-auto px-0 w-full"
               >
                 {tracks.map((track) => {
                   const trackId = track.id || track.track_id;

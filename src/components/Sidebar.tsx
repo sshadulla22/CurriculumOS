@@ -10,12 +10,13 @@ interface SidebarItem {
 
 interface SidebarProps {
   activeId: string;
+  onSelect?: (id: string) => void;
   items: SidebarItem[];
   open: boolean;
   onClose: () => void;
 }
 
-export default function Sidebar({ activeId, items, open, onClose }: SidebarProps) {
+export default function Sidebar({ activeId, onSelect, items, open, onClose }: SidebarProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(items.map((i) => [i.id, true]))
   );
@@ -73,7 +74,10 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                 <a
                   id={`sidebar-${item.id}`}
                   href={`#${item.id}`}
-                  onClick={onClose}
+                  onClick={() => {
+                    onSelect?.(item.id);
+                    onClose();
+                  }}
                   className="flex-1 flex items-start gap-2 px-2 py-[5px] rounded-md text-[13px] transition-all duration-200 relative"
                   style={{
                     color: isSectionActive ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -154,7 +158,10 @@ export default function Sidebar({ activeId, items, open, onClose }: SidebarProps
                         <a
                           id={`sidebar-${sub.id}`}
                           href={`#${sub.id}`}
-                          onClick={onClose}
+                          onClick={() => {
+                            onSelect?.(sub.id);
+                            onClose();
+                          }}
                           className="block px-2 py-[4px] rounded text-[12px] transition-colors whitespace-normal break-words relative"
                           style={{
                             color: activeId === sub.id ? 'var(--text-primary)' : 'var(--text-muted)',

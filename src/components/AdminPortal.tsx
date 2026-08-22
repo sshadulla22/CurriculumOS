@@ -5,6 +5,7 @@ import AdminLogin from './AdminLogin';
 import ThemeToggle from './ThemeToggle';
 import SkeletonLoading from './SkeletonLoading';
 import CategorySection from './CategorySection';
+import RichTextEditor from './RichTextEditor';
 import {
   Plus,
   Trash2,
@@ -1105,133 +1106,11 @@ export default function AdminPortal() {
                       <label className="mb-1.5 block text-[12px] font-medium text-neutral-500">
                         Description
                       </label>
-
-                     <div className="overflow-hidden rounded-md border border-neutral-200 bg-white">
-  <div className="flex items-center gap-1 overflow-x-auto border-b border-neutral-200 bg-neutral-50 px-2 py-2 no-scrollbar">
-    {[
-      // Basic formatting
-      { label: 'B', command: 'bold', title: 'Bold', className: 'font-bold' },
-      { label: 'I', command: 'italic', title: 'Italic', className: 'italic' },
-      { label: 'U', command: 'underline', title: 'Underline', className: 'underline' },
-      {
-        label: 'S',
-        command: 'strikeThrough',
-        title: 'Strikethrough',
-        className: 'line-through',
-      },
-
-      // Headings
-      { label: 'H1', command: 'formatBlock', value: 'h1', title: 'Heading 1' },
-      { label: 'H2', command: 'formatBlock', value: 'h2', title: 'Heading 2' },
-      { label: 'H3', command: 'formatBlock', value: 'h3', title: 'Heading 3' },
-      { label: 'P', command: 'formatBlock', value: 'p', title: 'Paragraph' },
-
-      // Lists
-      { label: '• List', command: 'insertUnorderedList', title: 'Bullet list' },
-      { label: '1. List', command: 'insertOrderedList', title: 'Numbered list' },
-
-      // Alignment
-      { label: '←', command: 'justifyLeft', title: 'Align left' },
-      { label: '≡', command: 'justifyCenter', title: 'Align center' },
-      { label: '→', command: 'justifyRight', title: 'Align right' },
-
-      // Block / cleanup
-      {
-        label: '❝',
-        command: 'formatBlock',
-        value: 'blockquote',
-        title: 'Quote',
-      },
-      { label: 'Clear', command: 'removeFormat', title: 'Clear formatting' },
-      { label: '↶', command: 'undo', title: 'Undo' },
-      { label: '↷', command: 'redo', title: 'Redo' },
-    ].map((item) => (
-      <button
-        key={`${item.command}-${item.label}`}
-        type="button"
-        title={item.title}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => applyDescriptionCommand(item.command, item.value)}
-        className={[
-          'shrink-0 rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600',
-          'transition-colors hover:border-neutral-400 hover:text-black',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1',
-          item.className || '',
-        ].join(' ')}
-      >
-        {item.label}
-      </button>
-    ))}
-
-    {/* Text color */}
-    <label
-      title="Text color"
-      className="flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded border border-neutral-200 bg-white px-1.5 text-[11px] font-medium text-neutral-600 hover:border-neutral-400"
-    >
-      <span>A</span>
-      <input
-        type="color"
-        defaultValue="#262626"
-        onMouseDown={(event) => event.preventDefault()}
-        onChange={(event) =>
-          applyDescriptionCommand('foreColor', event.target.value)
-        }
-        className="h-4 w-4 cursor-pointer border-0 bg-transparent p-0"
-      />
-    </label>
-
-    {/* Text highlight color */}
-    <label
-      title="Text highlight color"
-      className="flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded border border-neutral-200 bg-white px-1.5 text-[11px] font-medium text-neutral-600 hover:border-neutral-400"
-    >
-      <span>✦</span>
-      <input
-        type="color"
-        defaultValue="#fef08a"
-        onMouseDown={(event) => event.preventDefault()}
-        onChange={(event) =>
-          applyDescriptionCommand('hiliteColor', event.target.value)
-        }
-        className="h-4 w-4 cursor-pointer border-0 bg-transparent p-0"
-      />
-    </label>
-
-    {/* Image upload */}
-    <input
-      ref={imageInputRef}
-      type="file"
-      accept="image/*"
-      onChange={handleImageUpload}
-      className="hidden"
-    />
-
-    <button
-      type="button"
-      title="Insert image"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={() => imageInputRef.current?.click()}
-      className="flex shrink-0 items-center gap-1 rounded border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-600 transition-colors hover:border-neutral-400 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-1"
-    >
-      <Image size={11} />
-      <span>Image</span>
-    </button>
-  </div>
-
-  <div
-    ref={attachDescriptionRef}
-    contentEditable
-    suppressContentEditableWarning
-    onInput={(event) => {
-      const html = event.currentTarget.innerHTML;
-      descriptionHtmlRef.current = html;
-      updateModule('description', html);
-    }}
-    data-placeholder="Describe this module..."
-    className="min-h-[140px] w-full resize-y overflow-auto bg-white p-3 text-[13px] leading-relaxed text-neutral-700 outline-none empty:before:pointer-events-none empty:before:text-neutral-400 empty:before:content-[attr(data-placeholder)] [&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-neutral-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:my-2 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:my-3 [&_img]:max-w-full [&_img]:rounded-md [&_ol]:my-2 [&_ol]:ml-5 [&_ol]:list-decimal [&_ul]:my-2 [&_ul]:ml-5 [&_ul]:list-disc"
-    style={{ whiteSpace: 'pre-wrap' }}
-  />
-</div>
+                      <RichTextEditor
+                        value={currentModule.description || ''}
+                        onChange={(content) => updateModule('description', content)}
+                        placeholder="Describe this module..."
+                      />
                     </div>
                   </div>
 
@@ -1461,23 +1340,39 @@ export default function AdminPortal() {
               </section>
 
               <section
-                className={`flex-1 overflow-y-auto bg-neutral-50 ${
+                className={`flex-1 overflow-y-auto transition-colors ${
                   activeTab === 'preview' ? 'block' : 'hidden xl:block'
                 }`}
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                }}
               >
-                <div className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-5 backdrop-blur">
-                  <Eye size={13} className="text-neutral-400" />
-                  <span className="text-[12px] font-medium text-neutral-500">Preview</span>
-                  <span className="ml-auto flex items-center gap-1.5 text-[11px] text-neutral-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Live
-                  </span>
+                <div
+                  className="sticky top-0 z-10 flex h-12 items-center justify-between border-b px-5 backdrop-blur"
+                  style={{
+                    borderColor: 'var(--border-primary)',
+                    backgroundColor: 'var(--bg-blur)',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Eye size={13} style={{ color: 'var(--text-muted)' }} />
+                    <span className="text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      Preview
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Live
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                  </div>
                 </div>
 
-                <div className="p-4">
-                  <div className="">
-                    {memoizedPreview}
-                  </div>
+                <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+                  {memoizedPreview}
                 </div>
               </section>
             </main>

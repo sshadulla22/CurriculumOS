@@ -15,6 +15,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import JSCompilerModal from './JSCompilerModal';
 
 type Note = {
   type: 'explainer' | 'internal' | 'warning';
@@ -70,6 +71,8 @@ export default function CategorySection({
   const [copyError, setCopyError] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
+  const [isCompilerOpen, setIsCompilerOpen] = useState(false);
+  const [compilerCode, setCompilerCode] = useState('');
 
   const handleCopy = async (text: string) => {
     setCopying(true);
@@ -192,33 +195,45 @@ export default function CategorySection({
                   source_code.js
                 </span>
               </div>
-              <button
-                onClick={() => handleCopy(code)}
-                disabled={copying}
-                className="flex items-center justify-center rounded-lg p-2 transition"
-                style={{
-                  border: '1px solid var(--border-primary)',
-                  backgroundColor: 'var(--bg-elevated)',
-                  color: 'var(--text-muted)',
-                }}
-                aria-label="Copy code"
-              >
-                {copying ? (
-                  <div
-                    className="h-3.5 w-3.5 animate-spin rounded-full border-2"
-                    style={{
-                      borderColor: 'var(--border-primary)',
-                      borderTopColor: 'var(--text-secondary)',
-                    }}
-                  />
-                ) : copied ? (
-                  <Check size={14} className="text-emerald-500" />
-                ) : copyError ? (
-                  <span className="text-[10px] font-semibold text-rose-500">!</span>
-                ) : (
-                  <Copy size={14} />
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setCompilerCode(code);
+                    setIsCompilerOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition bg-indigo-600/10 text-indigo-500 hover:bg-indigo-600/20 border border-indigo-500/20"
+                >
+                  <Play size={12} />
+                  <span>Run Code</span>
+                </button>
+                <button
+                  onClick={() => handleCopy(code)}
+                  disabled={copying}
+                  className="flex items-center justify-center rounded-lg p-2 transition"
+                  style={{
+                    border: '1px solid var(--border-primary)',
+                    backgroundColor: 'var(--bg-elevated)',
+                    color: 'var(--text-muted)',
+                  }}
+                  aria-label="Copy code"
+                >
+                  {copying ? (
+                    <div
+                      className="h-3.5 w-3.5 animate-spin rounded-full border-2"
+                      style={{
+                        borderColor: 'var(--border-primary)',
+                        borderTopColor: 'var(--text-secondary)',
+                      }}
+                    />
+                  ) : copied ? (
+                    <Check size={14} className="text-emerald-500" />
+                  ) : copyError ? (
+                    <span className="text-[10px] font-semibold text-rose-500">!</span>
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="w-full overflow-x-auto" style={{ backgroundColor: 'var(--code-bg)' }}>
@@ -610,6 +625,13 @@ export default function CategorySection({
           </div>
         </div>
       )}
+
+      {/* JS Live Compiler Modal */}
+      <JSCompilerModal
+        isOpen={isCompilerOpen}
+        onClose={() => setIsCompilerOpen(false)}
+        initialCode={compilerCode}
+      />
     </motion.section>
   );
 }
