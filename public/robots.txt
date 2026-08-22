@@ -1,0 +1,9 @@
+# Robots.txt for CurriculumOS / Curriculum OS
+User-agent: *
+Allow: /
+Allow: /student
+Allow: /admin
+
+# Host and Sitemap
+Host: https://curriculumos.com
+Sitemap: https://curriculumos.com/sitemap.xml
