@@ -180,11 +180,9 @@ function StudentDashboard() {
 
         // Pick the topmost visible section (based on DOM order)
         const allSections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
-        let found = false;
         for (const section of allSections) {
           if (activeSectionsRef.current.has(section.id)) {
             setActiveId(section.id);
-            found = true;
             break;
           }
         }

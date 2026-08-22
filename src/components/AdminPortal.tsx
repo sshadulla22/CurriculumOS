@@ -20,7 +20,6 @@ import {
   Triangle,
   Menu,
   X,
-  Image,
   Link2,
 } from 'lucide-react';
 
@@ -114,7 +113,6 @@ export default function AdminPortal() {
   const [showCodeEditor, setShowCodeEditor] = useState(false);
 
   const descriptionEditorRef = useRef<HTMLDivElement | null>(null);
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionHtmlRef = useRef<string>('');
   const loadedDescIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -206,44 +204,6 @@ export default function AdminPortal() {
     if (!currentModule) return;
     updateModule('code', '');
     setShowCodeEditor(false);
-  }
-
-  function applyDescriptionCommand(command: string, value?: string) {
-    if (!descriptionEditorRef.current) return;
-    descriptionEditorRef.current.focus();
-    document.execCommand(command, false, value);
-    const html = descriptionEditorRef.current.innerHTML;
-    descriptionHtmlRef.current = html;
-    updateModule('description', html);
-  }
-
-  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (!descriptionEditorRef.current) return;
-
-      descriptionEditorRef.current.focus();
-      document.execCommand(
-        'insertHTML',
-        false,
-        `<img src="${dataUrl}" style="max-width: 100%; height: auto; margin: 8px 0; border-radius: 4px;" alt="" />`
-      );
-
-      const html = descriptionEditorRef.current.innerHTML;
-      descriptionHtmlRef.current = html;
-      updateModule('description', html);
-    };
-
-    reader.readAsDataURL(file);
-    if (imageInputRef.current) {
-      imageInputRef.current.value = '';
-    }
   }
 
   function updateQuestion(index: number, field: keyof InterviewQuestion, value: string) {
@@ -484,13 +444,6 @@ export default function AdminPortal() {
       setShowCodeEditor(Boolean(currentModule.code?.trim()));
     }
   }, [currentModule?.id]);
-
-  function attachDescriptionRef(node: HTMLDivElement | null) {
-    descriptionEditorRef.current = node;
-    if (node && node.innerHTML !== descriptionHtmlRef.current) {
-      node.innerHTML = descriptionHtmlRef.current;
-    }
-  }
 
   /* ---------- ACTIONS ---------- */
 
