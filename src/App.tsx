@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import { ROADMAP_DATA } from './data/roadmap';
@@ -21,6 +21,9 @@ function StudentDashboard() {
   const [activeId, setActiveId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const activeSectionsRef = useRef<Set<string>>(new Set());
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const toggleSearch = useCallback(() => setSearchOpen((prev) => !prev), []);
@@ -88,26 +91,66 @@ function StudentDashboard() {
     };
   }, [currentTrack]);
 
-  // Scroll Tracking (Vercel uses precise offsets)
+  // ═══════════════════════════════════════════════
+  // INTERSECTION OBSERVER for sidebar active tracking
+  // ═══════════════════════════════════════════════
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    const sections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
+    if (sections.length === 0) return;
+
+    activeSectionsRef.current.clear();
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          if (entry.isIntersecting) {
+            activeSectionsRef.current.add(id);
+          } else {
+            activeSectionsRef.current.delete(id);
+          }
+        });
+
+        // Pick the topmost visible section (based on DOM order)
+        const allSections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
+        for (const section of allSections) {
+          if (activeSectionsRef.current.has(section.id)) {
+            setActiveId(section.id);
+            break;
+          }
+        }
+      },
+      {
+        rootMargin: '-80px 0px -60% 0px',
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((section) => {
+      observerRef.current!.observe(section);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [roadmapData]);
+
+  // Scroll Progress (percentage)
   useEffect(() => {
     const handleScroll = () => {
       const winScroll = document.documentElement.scrollTop;
       const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      setProgress((winScroll / height) * 100);
-
-      const sections = document.querySelectorAll<HTMLElement>('[data-scroll-target]');
-      let current = activeId;
-      sections.forEach((section) => {
-        if (winScroll >= section.offsetTop - 160) {
-          current = section.id;
-        }
-      });
-      setActiveId(current);
+      setProgress(height > 0 ? (winScroll / height) * 100 : 0);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeId]);
+  }, []);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -127,7 +170,13 @@ function StudentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950 antialiased selection:bg-zinc-900 selection:text-white">
+    <div
+      className="min-h-screen antialiased"
+      style={{
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+      }}
+    >
       <Navbar
         progress={progress}
         onMenu={() => setSidebarOpen(true)}
@@ -135,7 +184,7 @@ function StudentDashboard() {
       />
 
       <div className="mx-auto flex max-w-full">
-        {/* Vercel-style Left Sidebar */}
+        {/* Left Sidebar */}
         <Sidebar
           activeId={activeId}
           items={roadmapData}
@@ -146,81 +195,104 @@ function StudentDashboard() {
         <main className="min-w-0 flex-1 px-4 pt-14 sm:px-6 lg:px-10 xl:ml-64">
           
          {/* Sub-header / Track Switcher */}
-<div className="sticky top-14 z-30 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md">
-  <div className="relative mx-auto max-w-7xl">
-    {/* Left fade – mobile only */}
-    <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 bg-gradient-to-r from-white via-white/80 to-transparent lg:hidden" />
-    
-    <nav
-      role="tablist"
-      aria-busy={modulesLoading}
-      className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
-    >
-      {tracks.map((track) => {
-        const isActive = currentTrack?.id === track.id;
-        return (
-          <button
-            key={track.id}
-            role="tab"
-            aria-selected={isActive}
-            aria-current={isActive ? 'page' : undefined}
-            onClick={() => {
-              if (modulesLoading || isActive) return;
-              setCurrentTrack(track);
-              // Auto‑scroll active tab into view (mobile UX)
-              const el = document.getElementById(`track-${track.id}`);
-              el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          <div
+            className="sticky top-14 z-30 w-full backdrop-blur-md"
+            style={{
+              borderBottom: '1px solid var(--border-primary)',
+              backgroundColor: 'var(--bg-blur)',
             }}
-            id={`track-${track.id}`}
-            className={`group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 ${
-              isActive
-                ? 'text-zinc-950'
-                : 'text-zinc-500 hover:text-zinc-800'
-            }`}
           >
-            {/* Hover background pill (subtle) */}
-            <span
-              className={`absolute inset-x-1 inset-y-2 rounded-full transition-colors duration-200 ${
-                isActive
-                  ? 'bg-zinc-100/0'
-                  : 'bg-transparent group-hover:bg-zinc-100/70'
-              }`}
-            />
-            <span className="relative z-10">{track.name}</span>
+            <div className="relative mx-auto max-w-7xl">
+              {/* Left fade – mobile only */}
+              <div
+                className="pointer-events-none absolute left-0 top-0 z-10 h-full w-10 lg:hidden"
+                style={{
+                  background: `linear-gradient(to right, var(--fade-from), var(--fade-transparent))`,
+                }}
+              />
+              
+              <nav
+                role="tablist"
+                aria-busy={modulesLoading}
+                className="no-scrollbar flex h-12 items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8"
+              >
+                {tracks.map((track) => {
+                  const isActive = currentTrack?.id === track.id;
+                  return (
+                    <button
+                      key={track.id}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => {
+                        if (modulesLoading || isActive) return;
+                        setCurrentTrack(track);
+                        const el = document.getElementById(`track-${track.id}`);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                      }}
+                      id={`track-${track.id}`}
+                      className="group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2"
+                      style={{
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                      }}
+                    >
+                      <span className="relative z-10">{track.name}</span>
 
-            {/* Smooth sliding underline */}
-            <span
-              className={`absolute bottom-0 left-0 right-0 h-0.5 origin-left transform rounded-full bg-zinc-950 transition-transform duration-300 ease-out ${
-                isActive ? 'scale-x-100' : 'scale-x-0'
-              }`}
-            />
-          </button>
-        );
-      })}
-    </nav>
+                      {/* Smooth sliding underline */}
+                      <span
+                        className={`absolute bottom-0 left-0 right-0 h-0.5 origin-left transform rounded-full transition-transform duration-300 ease-out ${
+                          isActive ? 'scale-x-100' : 'scale-x-0'
+                        }`}
+                        style={{ backgroundColor: 'var(--text-primary)' }}
+                      />
+                    </button>
+                  );
+                })}
+              </nav>
 
-    {modulesLoading && (
-      <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-2 text-xs text-zinc-500">
-        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-        Loading modules
-      </div>
-    )}
+              {modulesLoading && (
+                <div
+                  className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-2 text-xs"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <div
+                    className="h-3.5 w-3.5 animate-spin rounded-full border-2"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      borderTopColor: 'var(--text-primary)',
+                    }}
+                  />
+                  Loading modules
+                </div>
+              )}
 
-    {/* Right fade – mobile only */}
-    <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 bg-gradient-to-l from-white via-white/80 to-transparent lg:hidden" />
-  </div>
-</div>
+              {/* Right fade – mobile only */}
+              <div
+                className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 lg:hidden"
+                style={{
+                  background: `linear-gradient(to left, var(--fade-from), var(--fade-transparent))`,
+                }}
+              />
+            </div>
+          </div>
+
           {/* Hero Section */}
           <header className="mt-16">
-            <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-500">
+            <div className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
               <span>Curriculum</span>
               <span>/</span>
-              <span className="text-zinc-900">{currentTrack?.name}</span>
+              <span style={{ color: 'var(--text-primary)' }}>{currentTrack?.name}</span>
             </div>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-950 sm:text-5xl">
+            <h1
+              className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl"
+              style={{ color: 'var(--text-heading)' }}
+            >
               {currentTrack?.name}
             </h1>
-            <p className="mt-4 max-w-2xl text-base text-zinc-600 leading-relaxed">
+            <p
+              className="mt-4 max-w-2xl text-base leading-relaxed"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               {currentTrack?.description || "Master the core principles and advanced patterns through hands-on modules."}
             </p>
           </header>
@@ -228,13 +300,30 @@ function StudentDashboard() {
           {/* Modules List */}
           <div className="pb-20">
             {error && (
-              <div className="mb-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div
+                className="mb-8 rounded-lg px-4 py-3 text-sm"
+                style={{
+                  border: '1px solid var(--toast-error-border)',
+                  backgroundColor: 'var(--toast-error-bg)',
+                  color: 'var(--toast-error-text)',
+                }}
+              >
                 Unable to load this roadmap: {error}
               </div>
             )}
             {modulesLoading ? (
-              <div className="flex items-center gap-2 py-16 text-sm text-zinc-500" aria-live="polite">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+              <div
+                className="flex items-center gap-2 py-16 text-sm"
+                style={{ color: 'var(--text-muted)' }}
+                aria-live="polite"
+              >
+                <div
+                  className="h-4 w-4 animate-spin rounded-full border-2"
+                  style={{
+                    borderColor: 'var(--border-primary)',
+                    borderTopColor: 'var(--text-primary)',
+                  }}
+                />
                 Loading modules...
               </div>
             ) : (

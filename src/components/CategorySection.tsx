@@ -85,21 +85,52 @@ export default function CategorySection({
     }
   };
 
+  const noteStyle = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return {
+          backgroundColor: 'var(--note-warning-bg)',
+          borderLeftColor: 'var(--note-warning-border)',
+        };
+      case 'internal':
+        return {
+          backgroundColor: 'var(--note-internal-bg)',
+          borderLeftColor: 'var(--note-internal-border)',
+        };
+      default:
+        return {
+          backgroundColor: 'var(--note-explainer-bg)',
+          borderLeftColor: 'var(--note-explainer-border)',
+        };
+    }
+  };
+
   return (
     <section
       id={id}
-      className="py-10 md:py-0 border-b border-slate-200 scroll-mt-28"
+      data-scroll-target
+      className="py-10 md:py-0 scroll-mt-28"
+      style={{ borderBottom: '1px solid var(--border-primary)' }}
     >
       {/* 1) HEADER */}
       <div className="max-w-screen mb-12 py-6">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[10px] font-bold tracking-[0.2em] text-white bg-gray-800 px-2 py-1 rounded uppercase">
+          <span
+            className="text-[10px] font-bold tracking-[0.2em] px-2 py-1 rounded uppercase"
+            style={{
+              backgroundColor: 'var(--accent-bg)',
+              color: 'var(--accent-text)',
+            }}
+          >
             Module {index}
           </span>
-          <div className="h-px w-10 bg-slate-200" />
+          <div className="h-px w-10" style={{ backgroundColor: 'var(--border-primary)' }} />
         </div>
 
-        <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
+        <h2
+          className="text-3xl md:text-4xl font-semibold mb-4 tracking-tight"
+          style={{ color: 'var(--text-heading)' }}
+        >
           {title}
         </h2>
         {description ? (
@@ -112,7 +143,10 @@ export default function CategorySection({
                 setImageZoom(1);
               }
             }}
-            className="max-w-2xl text-base leading-relaxed text-slate-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:border-slate-300 [&_blockquote]:pl-3 [&_blockquote]:text-slate-500 [&_img]:cursor-pointer [&_img]:hover:opacity-80 [&_img]:transition-opacity"
+            className="max-w-2xl text-base leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold [&_em]:italic [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:cursor-pointer [&_img]:hover:opacity-80 [&_img]:transition-opacity"
+            style={{
+              color: 'var(--text-tertiary)',
+            }}
             dangerouslySetInnerHTML={{ __html: description }}
           />
         ) : null}
@@ -122,24 +156,56 @@ export default function CategorySection({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         {/* Code */}
         {code && (
-          <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100 px-4 py-2.5">
+          <div
+            className="flex w-full flex-col overflow-hidden rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
+            style={{
+              border: '1px solid var(--border-primary)',
+              backgroundColor: 'var(--bg-elevated)',
+            }}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-2.5"
+              style={{
+                borderBottom: '1px solid var(--code-header-border)',
+                backgroundColor: 'var(--code-header-bg)',
+              }}
+            >
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-200 text-slate-600">
+                <div
+                  className="flex h-6 w-6 items-center justify-center rounded-md"
+                  style={{
+                    backgroundColor: 'var(--bg-active)',
+                    color: 'var(--text-tertiary)',
+                  }}
+                >
                   <Code size={12} />
                 </div>
-                <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-600 uppercase">
+                <span
+                  className="text-[11px] font-semibold tracking-[0.12em] uppercase"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   source_code.js
                 </span>
               </div>
               <button
                 onClick={() => handleCopy(code)}
                 disabled={copying}
-                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                className="flex items-center justify-center rounded-lg p-2 transition"
+                style={{
+                  border: '1px solid var(--border-primary)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  color: 'var(--text-muted)',
+                }}
                 aria-label="Copy code"
               >
                 {copying ? (
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
+                  <div
+                    className="h-3.5 w-3.5 animate-spin rounded-full border-2"
+                    style={{
+                      borderColor: 'var(--border-primary)',
+                      borderTopColor: 'var(--text-secondary)',
+                    }}
+                  />
                 ) : copied ? (
                   <Check size={14} className="text-emerald-500" />
                 ) : copyError ? (
@@ -150,8 +216,11 @@ export default function CategorySection({
               </button>
             </div>
 
-            <div className="w-full overflow-x-auto bg-[#0f172a]">
-              <pre className="min-h-[220px] w-full overflow-x-auto p-3 text-[12.5px] leading-6 text-slate-200 md:min-h-[240px] md:p-4">
+            <div className="w-full overflow-x-auto" style={{ backgroundColor: 'var(--code-bg)' }}>
+              <pre
+                className="min-h-[220px] w-full overflow-x-auto p-3 text-[12.5px] leading-6 md:min-h-[240px] md:p-4"
+                style={{ color: 'var(--code-text)' }}
+              >
                 <code className="block min-w-max font-mono">{code}</code>
               </pre>
             </div>
@@ -160,14 +229,26 @@ export default function CategorySection({
 
         {/* Video */}
         {videoId && (
-          <div className="flex h-88 flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-              <Play size={14} className="text-slate-400" />
-              <span className="text-xs font-medium text-slate-500">
+          <div
+            className="flex h-88 flex-col rounded-xl shadow-sm overflow-hidden"
+            style={{
+              border: '1px solid var(--border-primary)',
+              backgroundColor: 'var(--bg-elevated)',
+            }}
+          >
+            <div
+              className="flex items-center gap-2 px-4 py-2.5"
+              style={{
+                backgroundColor: 'var(--bg-muted)',
+                borderBottom: '1px solid var(--border-primary)',
+              }}
+            >
+              <Play size={14} style={{ color: 'var(--text-muted)' }} />
+              <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                 Video Tutorial
               </span>
             </div>
-            <div className="relative aspect-video bg-slate-900">
+            <div className="relative aspect-video" style={{ backgroundColor: 'var(--code-bg)' }}>
               <iframe
                 className="absolute inset-0 w-full h-full"
                 src={`https://www.youtube.com/embed/${videoId}`}
@@ -182,7 +263,10 @@ export default function CategorySection({
       {/* 3) NOTES + RESOURCES */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
         <div className="lg:col-span-8 space-y-3">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+          <h4
+            className="text-[10px] font-bold uppercase tracking-widest mb-4"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Key Observations
           </h4>
 
@@ -190,25 +274,32 @@ export default function CategorySection({
             {notes.map((note, i) => (
               <div
                 key={i}
-                className={`p-4 border-l-4 ${
-                  note.type === 'warning'
-                    ? 'bg-rose-50 border-rose-400'
-                    : note.type === 'internal'
-                      ? 'bg-emerald-50 border-emerald-400'
-                      : 'bg-slate-50 border-slate-400'
-                }`}
+                className="p-4 border-l-4"
+                style={noteStyle(note.type)}
               >
-                <h5 className="text-[11px] font-bold text-slate-900 uppercase mb-1">
+                <h5
+                  className="text-[11px] font-bold uppercase mb-1"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {note.title}
                 </h5>
-                <p className="text-sm text-slate-600 leading-snug">
+                <p
+                  className="text-sm leading-snug"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
                   {note.content}
                 </p>
               </div>
             ))}
 
             {notes.length === 0 && (
-              <div className="p-4 rounded-lg bg-slate-50 text-sm text-slate-500">
+              <div
+                className="p-4 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'var(--bg-muted)',
+                  color: 'var(--text-muted)',
+                }}
+              >
                 No notes.
               </div>
             )}
@@ -216,7 +307,10 @@ export default function CategorySection({
         </div>
 
         <div className="lg:col-span-4">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+          <h4
+            className="text-[10px] font-bold uppercase tracking-widest mb-4"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Resources
           </h4>
 
@@ -228,23 +322,35 @@ export default function CategorySection({
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors group"
+                  className="flex items-center justify-between p-4 rounded-xl transition-colors group"
+                  style={{
+                    border: '1px solid var(--border-primary)',
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <Terminal size={18} className="text-slate-400" />
-                    <span className="text-sm font-semibold text-slate-700">
+                    <Terminal size={18} style={{ color: 'var(--text-muted)' }} />
+                    <span
+                      className="text-sm font-semibold"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
                       {resource.title}
                     </span>
                   </div>
                   <ExternalLink
                     size={14}
-                    className="text-slate-300 group-hover:text-slate-600"
+                    style={{ color: 'var(--text-muted)' }}
                   />
                 </a>
               ))}
             </div>
           ) : (
-            <div className="p-4 rounded-xl border border-slate-200 text-sm text-slate-500">
+            <div
+              className="p-4 rounded-xl text-sm"
+              style={{
+                border: '1px solid var(--border-primary)',
+                color: 'var(--text-muted)',
+              }}
+            >
               No resources available
             </div>
           )}
@@ -254,7 +360,10 @@ export default function CategorySection({
       {/* 4) SUBTOPICS (with anchors) */}
       {subTopics.length > 0 && (
         <div className="mb-16">
-          <h4 className="text-lg font-semibold text-black mb-6">
+          <h4
+            className="text-lg font-semibold mb-6"
+            style={{ color: 'var(--text-primary)' }}
+          >
             Module Blueprint
           </h4>
 
@@ -262,26 +371,43 @@ export default function CategorySection({
             {subTopics.map((topic) => (
               <div
                 key={topic.id}
-                id={topic.id} // ✅ anchor for sidebar subtopic links
-                className="rounded-xl bg-gray-50 p-2 scroll-mt-28"
+                id={topic.id}
+                data-scroll-target
+                className="rounded-xl p-2 scroll-mt-28"
+                style={{ backgroundColor: 'var(--subtopic-bg)' }}
               >
                 <div className="flex items-start gap-3 mb-2">
                   <ChevronRight size={18} className="text-indigo-500 mt-1" />
-                  <h5 className="text-base font-bold text-slate-900">
+                  <h5
+                    className="text-base font-bold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {topic.title}
                   </h5>
                 </div>
 
                 {topic.description && (
-                  <p className="text-sm text-slate-700 mb-4 ml-7">
+                  <p
+                    className="text-sm mb-4 ml-7"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     {topic.description}
                   </p>
                 )}
 
                 {topic.table && (
-                  <div className="ml-7 overflow-x-auto rounded-lg border border-slate-300">
+                  <div
+                    className="ml-7 overflow-x-auto rounded-lg"
+                    style={{ border: '1px solid var(--table-border)' }}
+                  >
                     <table className="w-full text-xs text-left">
-                      <thead className="bg-slate-200 text-slate-800 font-bold uppercase">
+                      <thead
+                        className="font-bold uppercase"
+                        style={{
+                          backgroundColor: 'var(--table-header-bg)',
+                          color: 'var(--table-header-text)',
+                        }}
+                      >
                         <tr>
                           {topic.table.headers.map((h, i) => (
                             <th key={i} className="px-4 py-2">
@@ -290,13 +416,26 @@ export default function CategorySection({
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-300">
+                      <tbody
+                        className="divide-y"
+                        style={{
+                          // @ts-ignore
+                          '--tw-divide-opacity': '1',
+                        }}
+                      >
                         {topic.table.rows.map((row, i) => (
-                          <tr key={i}>
+                          <tr
+                            key={i}
+                            style={{ borderColor: 'var(--table-border)' }}
+                          >
                             {row.map((cell, j) => (
                               <td
                                 key={j}
-                                className="px-4 py-2 bg-white text-slate-900"
+                                className="px-4 py-2"
+                                style={{
+                                  backgroundColor: 'var(--table-cell-bg)',
+                                  color: 'var(--text-primary)',
+                                }}
                               >
                                 {cell}
                               </td>
@@ -315,10 +454,16 @@ export default function CategorySection({
 
       {/* 5) INTERVIEW FAQ */}
       {interviewQuestions.length > 0 && (
-        <div className="bg-slate-50 rounded-2xl p-6 md:p-8">
+        <div
+          className="rounded-2xl p-6 md:p-8"
+          style={{ backgroundColor: 'var(--faq-bg)' }}
+        >
           <div className="flex items-center gap-2 mb-6">
-            <HelpCircle size={20} className="text-slate-400" />
-            <h4 className="text-lg font-bold text-slate-900">
+            <HelpCircle size={20} style={{ color: 'var(--text-muted)' }} />
+            <h4
+              className="text-lg font-bold"
+              style={{ color: 'var(--text-primary)' }}
+            >
               Interview Readiness
             </h4>
           </div>
@@ -327,32 +472,51 @@ export default function CategorySection({
             {interviewQuestions.map((qa, i) => (
               <div
                 key={i}
-                className="bg-white border border-slate-200 rounded-lg overflow-hidden"
+                className="rounded-lg overflow-hidden"
+                style={{
+                  backgroundColor: 'var(--faq-card-bg)',
+                  border: '1px solid var(--faq-card-border)',
+                }}
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
                 >
-                  <span className="text-[14px] font-semibold text-slate-700">
+                  <span
+                    className="text-[14px] font-semibold"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     {qa.question}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`text-slate-400 transition-transform ${
+                    className={`transition-transform ${
                       openFaq === i ? 'rotate-180' : ''
                     }`}
+                    style={{ color: 'var(--text-muted)' }}
                   />
                 </button>
 
                 {openFaq === i && (
                   <div className="px-5 pb-5">
-                    <div className="pt-2 border-t border-slate-100 flex gap-3 text-sm leading-relaxed text-slate-600">
+                    <div
+                      className="pt-2 flex gap-3 text-sm leading-relaxed"
+                      style={{
+                        borderTop: '1px solid var(--border-secondary)',
+                        color: 'var(--text-tertiary)',
+                      }}
+                    >
                       <CheckCircle2
                         size={16}
                         className="text-emerald-500 shrink-0 mt-1"
                       />
                       <p>
-                        <span className="font-bold text-slate-900">Answer:</span>{' '}
+                        <span
+                          className="font-bold"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          Answer:
+                        </span>{' '}
                         {qa.answer}
                       </p>
                     </div>

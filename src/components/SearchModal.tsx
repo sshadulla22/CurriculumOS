@@ -1,11 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, X, ChevronRight, Hash, FileText } from 'lucide-react';
-import { RoadmapItem } from '../data/roadmap';
+
+interface SearchItem {
+  id: string;
+  title: string;
+  subTopics?: { id: string; title: string }[];
+}
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  items: RoadmapItem[];
+  items: SearchItem[];
 }
 
 export default function SearchModal({ isOpen, onClose, items }: SearchModalProps) {
@@ -35,19 +40,35 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center px-3 pt-16 sm:px-4 sm:pt-20">
-      <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-[2px]" onClick={onClose} />
+      <div
+        className="fixed inset-0 backdrop-blur-[2px]"
+        style={{ backgroundColor: 'var(--bg-backdrop)' }}
+        onClick={onClose}
+      />
 
-      <div className="relative w-full max-w-[92vw] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:max-w-lg">
-        <div className="flex items-center border-b border-slate-100 px-3 py-3 sm:px-4">
-          <Search className="mr-3 text-slate-400" size={18} />
+      <div
+        className="relative w-full max-w-[92vw] overflow-hidden rounded-xl shadow-2xl sm:max-w-lg"
+        style={{
+          border: '1px solid var(--border-primary)',
+          backgroundColor: 'var(--search-bg)',
+        }}
+      >
+        <div
+          className="flex items-center px-3 py-3 sm:px-4"
+          style={{ borderBottom: '1px solid var(--border-secondary)' }}
+        >
+          <Search className="mr-3" size={18} style={{ color: 'var(--text-muted)' }} />
           <input
             autoFocus
-            className="flex-1 border-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+            className="flex-1 border-none bg-transparent text-sm outline-none"
+            style={{
+              color: 'var(--text-secondary)',
+            }}
             placeholder="Search for concepts, patterns, or architecture..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}>
             <X size={18} />
           </button>
         </div>
@@ -59,35 +80,89 @@ export default function SearchModal({ isOpen, onClose, items }: SearchModalProps
                 key={i}
                 href={`#${res.id}`}
                 onClick={onClose}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 group transition-colors"
+                className="flex items-center justify-between p-3 rounded-lg group transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--search-result-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                  <div
+                    className="w-8 h-8 rounded-md flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: 'var(--search-icon-bg)',
+                      color: 'var(--text-muted)',
+                    }}
+                  >
                     {res.type === 'Module' ? <Hash size={16} /> : <FileText size={16} />}
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold text-slate-900">{res.title}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{res.parent}</div>
+                    <div
+                      className="text-[13px] font-semibold"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {res.title}
+                    </div>
+                    <div
+                      className="text-[10px] font-medium"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {res.parent}
+                    </div>
                   </div>
                 </div>
-                <ChevronRight size={14} className="text-slate-300" />
+                <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
               </a>
             ))
           ) : query ? (
-            <div className="p-10 text-center text-sm text-slate-400">
-              No results for "<span className="text-slate-900 font-medium">{query}</span>"
+            <div className="p-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              No results for "<span style={{ color: 'var(--text-primary)' }} className="font-medium">{query}</span>"
             </div>
           ) : (
-            <div className="p-10 text-center text-[12px] font-bold text-slate-300 uppercase tracking-widest">
+            <div
+              className="p-10 text-center text-[12px] font-bold uppercase tracking-widest"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Type to search the roadmap
             </div>
           )}
         </div>
 
-        <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <div
+          className="px-4 py-2 flex justify-end"
+          style={{
+            backgroundColor: 'var(--search-footer-bg)',
+            borderTop: '1px solid var(--border-secondary)',
+          }}
+        >
           <div className="flex gap-4">
-             <span className="text-[10px] text-slate-400"><kbd className="font-sans border px-1 rounded bg-white">ESC</kbd> to close</span>
-             <span className="text-[10px] text-slate-400"><kbd className="font-sans border px-1 rounded bg-white">↵</kbd> to select</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              <kbd
+                className="font-sans px-1 rounded"
+                style={{
+                  border: '1px solid var(--kbd-border)',
+                  backgroundColor: 'var(--kbd-bg)',
+                }}
+              >
+                ESC
+              </kbd>{' '}
+              to close
+            </span>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              <kbd
+                className="font-sans px-1 rounded"
+                style={{
+                  border: '1px solid var(--kbd-border)',
+                  backgroundColor: 'var(--kbd-bg)',
+                }}
+              >
+                ↵
+              </kbd>{' '}
+              to select
+            </span>
           </div>
         </div>
       </div>

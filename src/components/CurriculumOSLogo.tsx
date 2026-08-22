@@ -13,10 +13,11 @@ export default function CurriculumOSLogo({
 
   return (
     <span
-      className={`text-[13px] font-semibold tracking-[-0.06em] text-slate-900 sm:text-[15px] ${className}`.trim()}
+      className={`text-[13px] font-semibold tracking-[-0.06em] sm:text-[15px] ${className}`.trim()}
       style={{
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        color: 'var(--text-primary)',
       }}
     >
       CurriculumOS

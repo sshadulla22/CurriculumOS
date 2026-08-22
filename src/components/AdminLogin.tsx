@@ -44,24 +44,39 @@ export default function AdminLogin({
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#fafafa] px-5 text-[#171717]">
+    <main
+      className="relative flex min-h-screen items-center justify-center overflow-hidden px-5"
+      style={{
+        backgroundColor: 'var(--login-bg)',
+        color: 'var(--text-primary)',
+      }}
+    >
       {/* Subtle background grid */}
       <div
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{
           backgroundImage:
-            'linear-gradient(to right, #f0f0f0 1px, transparent 1px), linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)',
+            `linear-gradient(to right, var(--login-grid) 1px, transparent 1px), linear-gradient(to bottom, var(--login-grid) 1px, transparent 1px)`,
           backgroundSize: '48px 48px',
         }}
       />
 
       {/* Background glow */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white blur-3xl" />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+        style={{ backgroundColor: 'var(--bg-elevated)' }}
+      />
 
       <div className="relative z-10 w-full max-w-[420px]">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-10 w-10 items-center justify-center bg-black text-xs font-bold text-white shadow-sm">
+          <div
+            className="mx-auto mb-5 flex h-10 w-10 items-center justify-center text-xs font-bold shadow-sm"
+            style={{
+              backgroundColor: 'var(--accent-bg)',
+              color: 'var(--accent-text)',
+            }}
+          >
             JS
           </div>
 
@@ -69,7 +84,10 @@ export default function AdminLogin({
             Admin Portal
           </h1>
 
-          <p className="mt-2 text-sm text-[#737373]">
+          <p
+            className="mt-2 text-sm"
+            style={{ color: 'var(--login-muted)' }}
+          >
             Sign in to manage your roadmap content.
           </p>
         </div>
@@ -77,13 +95,26 @@ export default function AdminLogin({
         {/* Login card */}
         <form
           onSubmit={handleSubmit}
-          className="border border-[#eaeaea] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-8"
+          className="p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-8"
+          style={{
+            border: `1px solid var(--login-card-border)`,
+            backgroundColor: 'var(--login-card-bg)',
+          }}
         >
-          <div className="mb-6 flex items-center gap-3 border-b border-[#eaeaea] pb-5">
-            <div className="flex h-9 w-9 items-center justify-center border border-[#eaeaea] bg-[#fafafa]">
+          <div
+            className="mb-6 flex items-center gap-3 pb-5"
+            style={{ borderBottom: `1px solid var(--login-card-border)` }}
+          >
+            <div
+              className="flex h-9 w-9 items-center justify-center"
+              style={{
+                border: `1px solid var(--login-card-border)`,
+                backgroundColor: 'var(--bg-subtle)',
+              }}
+            >
               <LockKeyhole
                 size={16}
-                className="text-[#525252]"
+                style={{ color: 'var(--login-label)' }}
               />
             </div>
 
@@ -92,7 +123,10 @@ export default function AdminLogin({
                 Secure sign in
               </p>
 
-              <p className="mt-0.5 text-xs text-[#a3a3a3]">
+              <p
+                className="mt-0.5 text-xs"
+                style={{ color: 'var(--login-muted)' }}
+              >
                 Authorized users only
               </p>
             </div>
@@ -101,7 +135,12 @@ export default function AdminLogin({
           {error && (
             <div
               role="alert"
-              className="mb-5 border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700"
+              className="mb-5 px-3 py-2.5 text-sm"
+              style={{
+                border: '1px solid var(--toast-error-border)',
+                backgroundColor: 'var(--toast-error-bg)',
+                color: 'var(--toast-error-text)',
+              }}
             >
               {error}
             </div>
@@ -111,7 +150,8 @@ export default function AdminLogin({
             <div>
               <label
                 htmlFor="admin-email"
-                className="mb-2 block text-xs font-medium text-[#525252]"
+                className="mb-2 block text-xs font-medium"
+                style={{ color: 'var(--login-label)' }}
               >
                 Email address
               </label>
@@ -126,14 +166,20 @@ export default function AdminLogin({
                   setEmail(event.target.value)
                 }
                 placeholder="you@example.com"
-                className="h-11 w-full border border-[#eaeaea] bg-white px-3 text-sm outline-none transition placeholder:text-[#a3a3a3] focus:border-black focus:ring-1 focus:ring-black"
+                className="h-11 w-full px-3 text-sm outline-none transition focus:ring-1"
+                style={{
+                  border: `1px solid var(--login-card-border)`,
+                  backgroundColor: 'var(--login-input-bg)',
+                  color: 'var(--text-primary)',
+                }}
               />
             </div>
 
             <div>
               <label
                 htmlFor="admin-password"
-                className="mb-2 block text-xs font-medium text-[#525252]"
+                className="mb-2 block text-xs font-medium"
+                style={{ color: 'var(--login-label)' }}
               >
                 Password
               </label>
@@ -148,14 +194,23 @@ export default function AdminLogin({
                   setPassword(event.target.value)
                 }
                 placeholder="Enter your password"
-                className="h-11 w-full border border-[#eaeaea] bg-white px-3 text-sm outline-none transition placeholder:text-[#a3a3a3] focus:border-black focus:ring-1 focus:ring-black"
+                className="h-11 w-full px-3 text-sm outline-none transition focus:ring-1"
+                style={{
+                  border: `1px solid var(--login-card-border)`,
+                  backgroundColor: 'var(--login-input-bg)',
+                  color: 'var(--text-primary)',
+                }}
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="flex h-11 w-full items-center justify-center gap-2 bg-black text-sm font-medium text-white transition hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-11 w-full items-center justify-center gap-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
+              style={{
+                backgroundColor: 'var(--accent-bg)',
+                color: 'var(--accent-text)',
+              }}
             >
               {loading ? (
                 <>
@@ -174,13 +229,22 @@ export default function AdminLogin({
             </button>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-2 border-t border-[#eaeaea] pt-5 text-xs text-[#a3a3a3]">
+          <div
+            className="mt-6 flex items-center justify-center gap-2 pt-5 text-xs"
+            style={{
+              borderTop: `1px solid var(--login-card-border)`,
+              color: 'var(--login-muted)',
+            }}
+          >
             <ShieldCheck size={14} />
             Protected by Supabase Auth
           </div>
         </form>
 
-        <p className="mt-6 text-center text-xs text-[#a3a3a3]">
+        <p
+          className="mt-6 text-center text-xs"
+          style={{ color: 'var(--login-muted)' }}
+        >
           JavaScript Mastery · Content Management
         </p>
       </div>
