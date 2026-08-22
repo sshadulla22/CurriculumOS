@@ -1,6 +1,7 @@
 import { Menu, Search, Command, Settings, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import CurriculumOSLogo from './CurriculumOSLogo';
+import ThemeToggle from './ThemeToggle';
 
 interface NavbarProps {
   progress: number;
@@ -92,6 +93,8 @@ export default function Navbar({ progress, onMenu, onSearch }: NavbarProps) {
               </>
             )}
           </Link>
+
+          <ThemeToggle />
           
           {/* Mobile Search Icon Only */}
           {!isAdmin && (

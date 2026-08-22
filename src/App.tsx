@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import CategorySection from './components/CategorySection';
 import SearchModal from './components/SearchModal';
 import AdminPortal from './components/AdminPortal';
+import SkeletonLoading from './components/SkeletonLoading';
 
 function StudentDashboard() {
   const [roadmapData, setRoadmapData] = useState<any[]>([]);
@@ -122,11 +123,7 @@ function StudentDashboard() {
   }, [toggleSearch, closeSidebar]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-      </div>
-    );
+    return <SkeletonLoading label="Loading curriculum" />;
   }
 
   return (

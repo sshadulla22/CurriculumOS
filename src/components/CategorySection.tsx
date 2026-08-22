@@ -91,7 +91,7 @@ export default function CategorySection({
       className="py-10 md:py-0 border-b border-slate-200 scroll-mt-28"
     >
       {/* 1) HEADER */}
-      <div className="max-w-4xl mb-12 py-6">
+      <div className="max-w-screen mb-12 py-6">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[10px] font-bold tracking-[0.2em] text-white bg-gray-800 px-2 py-1 rounded uppercase">
             Module {index}

@@ -17,6 +17,83 @@
   font-size: 16.5px;
 }
 
+html[data-theme='dark'] {
+  color-scheme: dark;
+  background-color: #09090b;
+}
+
+html[data-theme='dark'] body {
+  background-color: #09090b;
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .bg-white\/80 {
+  background-color: #18181b;
+}
+
+html[data-theme='dark'] .bg-zinc-50,
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-gray-50 {
+  background-color: #27272a;
+}
+
+html[data-theme='dark'] .bg-zinc-100,
+html[data-theme='dark'] .bg-slate-100,
+html[data-theme='dark'] .bg-neutral-100,
+html[data-theme='dark'] .bg-gray-100 {
+  background-color: #3f3f46;
+}
+
+html[data-theme='dark'] .bg-zinc-200,
+html[data-theme='dark'] .bg-slate-200,
+html[data-theme='dark'] .bg-neutral-200 {
+  background-color: #52525b;
+}
+
+html[data-theme='dark'] .text-zinc-950,
+html[data-theme='dark'] .text-zinc-900,
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-neutral-900,
+html[data-theme='dark'] .text-black {
+  color: #fafafa;
+}
+
+html[data-theme='dark'] .text-zinc-800,
+html[data-theme='dark'] .text-zinc-700,
+html[data-theme='dark'] .text-slate-700,
+html[data-theme='dark'] .text-neutral-700 {
+  color: #d4d4d8;
+}
+
+html[data-theme='dark'] .text-zinc-600,
+html[data-theme='dark'] .text-zinc-500,
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500,
+html[data-theme='dark'] .text-neutral-600,
+html[data-theme='dark'] .text-neutral-500 {
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .border-zinc-200,
+html[data-theme='dark'] .border-zinc-300,
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-neutral-200,
+html[data-theme='dark'] .border-gray-200 {
+  border-color: #3f3f46;
+}
+
+html[data-theme='dark'] .hover\:bg-zinc-100:hover,
+html[data-theme='dark'] .hover\:bg-zinc-50:hover,
+html[data-theme='dark'] .hover\:bg-neutral-100:hover {
+  background-color: #3f3f46;
+}
+
+html[data-theme='dark'] .shadow-sm,
+html[data-theme='dark'] .shadow-lg {
+  --tw-shadow-color: rgb(0 0 0 / 0.35);
+}
+
 body {
   margin: 0;
   min-width: 320px;

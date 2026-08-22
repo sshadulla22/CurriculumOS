@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import AdminLogin from './AdminLogin';
+import ThemeToggle from './ThemeToggle';
+import SkeletonLoading from './SkeletonLoading';
 import CategorySection from './CategorySection';
 import {
   Plus,
@@ -637,14 +639,7 @@ export default function AdminPortal() {
   /* ---------- RENDER ---------- */
 
   if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="flex items-center gap-2.5 text-[13px] text-neutral-500">
-          <Loader2 size={14} className="animate-spin" />
-          Authenticating
-        </div>
-      </div>
-    );
+    return <SkeletonLoading label="Authenticating" admin />;
   }
 
   if (!user) {
@@ -652,14 +647,7 @@ export default function AdminPortal() {
   }
 
   if (loading && !currentModule && modules.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="flex items-center gap-2.5 text-[13px] text-neutral-500">
-          <Loader2 size={14} className="animate-spin" />
-          Loading modules
-        </div>
-      </div>
-    );
+    return <SkeletonLoading label="Loading modules" admin />;
   }
 
   const hasCode = showCodeEditor || Boolean(currentModule?.code?.trim());
@@ -741,6 +729,7 @@ export default function AdminPortal() {
           <span className="hidden text-[12px] text-neutral-400 lg:inline">
             {user.email}
           </span>
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => navigate('/student')}
