@@ -23,6 +23,7 @@ function StudentDashboard() {
   const [activeId, setActiveId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const activeSectionsRef = useRef<Set<string>>(new Set());
@@ -252,91 +253,97 @@ function StudentDashboard() {
 
       <div className="mx-auto flex max-w-full">
         {/* Left Sidebar */}
-        <Sidebar
-          activeId={activeId}
-          onSelect={setActiveId}
-          items={roadmapData}
-          open={sidebarOpen}
-          onClose={closeSidebar}
-        />
+      <Sidebar
+  activeId={activeId}
+  onSelect={setActiveId}
+  items={roadmapData}
+  open={sidebarOpen}
+  onClose={closeSidebar}
+  isCollapsed={isCollapsed}
+  onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
+/>
 
-        <main className="min-w-0 flex-1 px-4 pt-28 sm:px-6 lg:px-10 xl:ml-64">
+        <main className={`min-w-0 flex-1 px-4 pt-28 sm:px-6 lg:px-10 transition-all duration-300 ${isCollapsed ? 'xl:ml-16' : 'xl:ml-64'}`}>
           
-         {/* Sub-header / Track Switcher (Fixed Navbar section) */}
-          <div
-            className="fixed top-14 left-0 right-0 xl:left-64 z-30 h-12 backdrop-blur-md px-4 sm:px-6 lg:px-10"
+        {/* Sub-header / Track Switcher (Fixed Navbar section) */}
+<div
+  className={`fixed top-14 left-0 right-0 z-30 backdrop-blur-md px-4 sm:px-6 lg:px-10 transition-all duration-300 overflow-hidden ${
+    isCollapsed 
+      ? 'h-0 opacity-0 pointer-events-none xl:left-16' 
+      : 'h-12 opacity-100 xl:left-64'
+  }`}
+  style={{
+    borderBottom: isCollapsed ? 'none' : '1px solid var(--border-primary)',
+    backgroundColor: 'var(--bg-blur)',
+  }}
+>
+  <div className="relative w-full h-full flex items-center">
+    <nav
+      role="tablist"
+      aria-busy={modulesLoading}
+      className="no-scrollbar flex h-full items-center gap-1 overflow-x-auto px-0 w-full"
+    >
+      {tracks.map((track) => {
+        const trackId = track.id || track.track_id;
+        const currentTrackId = currentTrack?.id || currentTrack?.track_id;
+        const isActive = currentTrackId === trackId;
+        return (
+          <button
+            key={trackId}
+            role="tab"
+            aria-selected={isActive}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => {
+              if (modulesLoading || isActive) return;
+              setCurrentTrack(track);
+              const el = document.getElementById(`track-${trackId}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }}
+            id={`track-${trackId}`}
+            className="group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2"
             style={{
-              borderBottom: '1px solid var(--border-primary)',
-              backgroundColor: 'var(--bg-blur)',
+              color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
             }}
           >
-            <div className="relative w-full h-full flex items-center">
-              <nav
-                role="tablist"
-                aria-busy={modulesLoading}
-                className="no-scrollbar flex h-full items-center gap-1 overflow-x-auto px-0 w-full"
-              >
-                {tracks.map((track) => {
-                  const trackId = track.id || track.track_id;
-                  const currentTrackId = currentTrack?.id || currentTrack?.track_id;
-                  const isActive = currentTrackId === trackId;
-                  return (
-                    <button
-                      key={trackId}
-                      role="tab"
-                      aria-selected={isActive}
-                      aria-current={isActive ? 'page' : undefined}
-                      onClick={() => {
-                        if (modulesLoading || isActive) return;
-                        setCurrentTrack(track);
-                        const el = document.getElementById(`track-${trackId}`);
-                        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                      }}
-                      id={`track-${trackId}`}
-                      className="group relative flex h-full shrink-0 items-center whitespace-nowrap px-3 py-1.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2"
-                      style={{
-                        color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                      }}
-                    >
-                      <span className="relative z-10">{track.name}</span>
+            <span className="relative z-10">{track.name}</span>
 
-                      {/* Smooth sliding underline */}
-                      <span
-                        className={`absolute bottom-0 left-0 right-0 h-0.5 origin-left transform rounded-full transition-transform duration-300 ease-out ${
-                          isActive ? 'scale-x-100' : 'scale-x-0'
-                        }`}
-                        style={{ backgroundColor: 'var(--text-primary)' }}
-                      />
-                    </button>
-                  );
-                })}
-              </nav>
+            {/* Smooth sliding underline */}
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 origin-left transform rounded-full transition-transform duration-300 ease-out ${
+                isActive ? 'scale-x-100' : 'scale-x-0'
+              }`}
+              style={{ backgroundColor: 'var(--text-primary)' }}
+            />
+          </button>
+        );
+      })}
+    </nav>
 
-              {modulesLoading && (
-                <div
-                  className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-2 text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <div
-                    className="h-3.5 w-3.5 animate-spin rounded-full border-2"
-                    style={{
-                      borderColor: 'var(--border-primary)',
-                      borderTopColor: 'var(--text-primary)',
-                    }}
-                  />
-                  Loading modules
-                </div>
-              )}
+    {modulesLoading && (
+      <div
+        className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-2 text-xs"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        <div
+          className="h-3.5 w-3.5 animate-spin rounded-full border-2"
+          style={{
+            borderColor: 'var(--border-primary)',
+            borderTopColor: 'var(--text-primary)',
+          }}
+        />
+        Loading modules
+      </div>
+    )}
 
-              {/* Right fade – mobile only */}
-              <div
-                className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 lg:hidden"
-                style={{
-                  background: `linear-gradient(to left, var(--fade-from), var(--fade-transparent))`,
-                }}
-              />
-            </div>
-          </div>
+    {/* Right fade – mobile only */}
+    <div
+      className="pointer-events-none absolute right-0 top-0 z-10 h-full w-10 lg:hidden"
+      style={{
+        background: `linear-gradient(to left, var(--fade-from), var(--fade-transparent))`,
+      }}
+    />
+  </div>
+</div>
 
           {/* Hero Section */}
           <header className="mt-2">

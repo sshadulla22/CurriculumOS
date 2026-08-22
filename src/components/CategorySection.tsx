@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { Maximize2, MonitorPlay } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+
 import {
   Copy,
   Check,
@@ -109,11 +112,24 @@ export default function CategorySection({
     }
   };
 
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
+
+// Handle ESC to exit theater mode
+const handleKeyDown = useCallback((e: KeyboardEvent) => {
+  if (e.key === 'Escape') setIsTheaterMode(false);
+}, []);
+
+useEffect(() => {
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [handleKeyDown]);
+
+
   return (
     <motion.section
       id={id}
       data-scroll-target
-      className="py-10 md:py-0 scroll-mt-28"
+      className="pb-10 md:pb-6 pt-0 scroll-mt-28"
       style={{ borderBottom: '1px solid var(--border-primary)' }}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -123,7 +139,7 @@ export default function CategorySection({
       {/* 1) HEADER */}
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-4">
-          <span
+          {/* <span
             className="text-[10px] font-bold tracking-[0.2em] px-2 py-1 rounded uppercase"
             style={{
               backgroundColor: 'var(--accent-bg)',
@@ -131,15 +147,24 @@ export default function CategorySection({
             }}
           >
             Module {index}
-          </span>
-          <div className="h-px w-10" style={{ backgroundColor: 'var(--border-primary)' }} />
+          </span> */}
+          {/* <div className="h-px w-10" style={{ backgroundColor: 'var(--border-primary)' }} /> */}
         </div>
 
         <h2
-          className="text-3xl md:text-3xl font-semibold mb-4 tracking-tight"
+          className="text-3xl md:text-3xl flex items-center font-semibold mb-4 tracking-tight"
           style={{ color: 'var(--text-heading)' }}
         >
-          {title}
+         {/* <span
+            className="text-[10px] font-bold tracking-[0.2em] px-2 py-1 rounded uppercase"
+            style={{
+              backgroundColor: 'var(--accent-bg)',
+              color: 'var(--accent-text)',
+            }}
+          >
+            Module {index}
+          </span>  */}
+         {/* <div className="h-px w-10" style={{ backgroundColor: 'var(--border-primary)' }} />  */}{title}
         </h2>
         {description ? (
           <div
@@ -162,92 +187,116 @@ export default function CategorySection({
 
       {/* 2) SANDBOX */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-        {/* Code */}
-        {code && (
-          <div
-            className="flex w-full flex-col overflow-hidden rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
-            style={{
-              border: '1px solid var(--border-primary)',
-              backgroundColor: 'var(--bg-elevated)',
-            }}
+{/* Code Block */}
+{code && (
+  <div
+    className="group flex w-full flex-col overflow-hidden rounded-2xl shadow-2xl transition-all duration-500"
+    style={{
+      border: '1px solid var(--border-primary)',
+      backgroundColor: 'var(--code-bg)', // Use code background for the whole container
+    }}
+  >
+    {/* 1. PREMIUM HEADER */}
+    <div
+      className="flex items-center justify-between px-4 py-3 backdrop-blur-md"
+      style={{
+        borderBottom: '1px solid var(--code-header-border)',
+        backgroundColor: 'var(--code-header-bg)',
+      }}
+    >
+      <div className="flex items-center gap-4">
+        {/* macOS Window Controls */}
+        <div className="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity hidden sm:flex">
+          <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+        </div>
+        
+        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-white/5 border border-white/5">
+          <Code size={12} className="text-indigo-400" />
+          <span
+            className="text-[10px] font-bold tracking-[0.15em] uppercase opacity-70"
+            style={{ color: 'var(--text-primary)' }}
           >
-            <div
-              className="flex items-center justify-between px-4 py-2.5"
-              style={{
-                borderBottom: '1px solid var(--code-header-border)',
-                backgroundColor: 'var(--code-header-bg)',
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-6 w-6 items-center justify-center rounded-md"
-                  style={{
-                    backgroundColor: 'var(--bg-active)',
-                    color: 'var(--text-tertiary)',
-                  }}
-                >
-                  <Code size={12} />
-                </div>
-                <span
-                  className="text-[11px] font-semibold tracking-[0.12em] uppercase"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  source_code.js
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setCompilerCode(code);
-                    setIsCompilerOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition bg-indigo-600/10 text-indigo-500 hover:bg-indigo-600/20 border border-indigo-500/20"
-                >
-                  <Play size={12} />
-                  <span>Run Code</span>
-                </button>
-                <button
-                  onClick={() => handleCopy(code)}
-                  disabled={copying}
-                  className="flex items-center justify-center rounded-lg p-2 transition"
-                  style={{
-                    border: '1px solid var(--border-primary)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    color: 'var(--text-muted)',
-                  }}
-                  aria-label="Copy code"
-                >
-                  {copying ? (
-                    <div
-                      className="h-3.5 w-3.5 animate-spin rounded-full border-2"
-                      style={{
-                        borderColor: 'var(--border-primary)',
-                        borderTopColor: 'var(--text-secondary)',
-                      }}
-                    />
-                  ) : copied ? (
-                    <Check size={14} className="text-emerald-500" />
-                  ) : copyError ? (
-                    <span className="text-[10px] font-semibold text-rose-500">!</span>
-                  ) : (
-                    <Copy size={14} />
-                  )}
-                </button>
-              </div>
-            </div>
+            source_code.js
+          </span>
+        </div>
+      </div>
 
-            <div className="w-full overflow-x-auto" style={{ backgroundColor: 'var(--code-bg)' }}>
-              <pre
-                className="min-h-[220px] w-full overflow-x-auto p-3 text-[12.5px] leading-6 md:min-h-[240px] md:p-4"
-                style={{ color: 'var(--code-text)' }}
-              >
-                <code className="block min-w-max font-mono">{code}</code>
-              </pre>
-            </div>
-          </div>
-        )}
+      <div className="flex items-center gap-2">
+        {/* RUN BUTTON */}
+        <button
+          onClick={() => {
+            setCompilerCode(code);
+            setIsCompilerOpen(true);
+          }}
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-500/20"
+        >
+          <Play size={10} fill="currentColor" />
+          <span>RUN CODE</span>
+        </button>
 
-        {/* Video */}
+        {/* COPY BUTTON */}
+        <button
+          onClick={() => handleCopy(code)}
+          disabled={copying}
+          className="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 hover:bg-white/10"
+          style={{
+            border: '1px solid var(--border-primary)',
+            backgroundColor: 'var(--bg-elevated)',
+            color: 'var(--text-muted)',
+          }}
+          aria-label="Copy code"
+        >
+          {copying ? (
+            <div className="h-3 w-3 animate-spin rounded-full border-2"
+              style={{ borderColor: 'var(--border-primary)', borderTopColor: 'var(--text-secondary)' }}
+            />
+          ) : copied ? (
+            <Check size={14} className="text-emerald-400" />
+          ) : (
+            <Copy size={14} />
+          )}
+        </button>
+      </div>
+    </div>
+
+    {/* 2. CODE AREA WITH LINE NUMBERS */}
+    <div className="relative flex w-full overflow-hidden font-mono text-[13px] leading-relaxed">
+      {/* Line Number Gutter */}
+      <div 
+        className="flex flex-col border-r px-3 py-5 text-right select-none opacity-20"
+        style={{ 
+          borderColor: 'var(--border-primary)',
+          backgroundColor: 'rgba(0,0,0,0.1)' 
+        }}
+      >
+        {code.split('\n').map((_, i) => (
+          <span key={i} className="leading-6">{i + 1}</span>
+        ))}
+      </div>
+
+      {/* Code Content */}
+      <div className="w-full overflow-x-auto">
+        <pre className="p-5 leading-6 scrollbar-thin scrollbar-thumb-white/10">
+          <code 
+            className="block min-w-max text-[var(--code-text)]"
+            style={{ fontFamily: '"JetBrains Mono", "Fira Code", monospace' }}
+          >
+            {code}
+          </code>
+        </pre>
+      </div>
+    </div>
+
+    {/* Subtle Language Badge */}
+    <div className="absolute bottom-3 right-4 pointer-events-none text-[9px] font-bold uppercase tracking-widest opacity-20">
+      JavaScript
+    </div>
+  </div>
+)}
+
+      {/* Video */}
         {videoId && (
           <div
             className="flex h-88 flex-col rounded-xl shadow-sm overflow-hidden"
@@ -277,7 +326,7 @@ export default function CategorySection({
               />
             </div>
           </div>
-        )}
+        )}  
       </div>
 
       {/* 3) NOTES + RESOURCES */}
